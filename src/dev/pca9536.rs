@@ -1,17 +1,13 @@
 //! Support for the PCA9536 "4-bit I2C-bus and SMBus I/O port"
 
-pub struct Pca9536<M> {
-    inner: M,
-}
+pub struct Pca9536<M>(M);
 
 impl<I2C> Pca9536<shared_bus::NullMutex<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
 {
     pub fn new(i2c: I2C) -> Self {
-        Self {
-            inner: shared_bus::BusMutex::create(Driver::new(i2c)),
-        }
+        Self(shared_bus::BusMutex::create(Driver::new(i2c)))
     }
 }
 
@@ -21,17 +17,15 @@ where
     M: shared_bus::BusMutex<Bus = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C) -> Self {
-        Self {
-            inner: shared_bus::BusMutex::create(Driver::new(i2c)),
-        }
+        Self(shared_bus::BusMutex::create(Driver::new(i2c)))
     }
 
     pub fn split<'b>(&'b mut self) -> Parts<'b, I2C, M> {
         Parts {
-            io0: crate::Pin::new(0, &self.inner),
-            io1: crate::Pin::new(1, &self.inner),
-            io2: crate::Pin::new(2, &self.inner),
-            io3: crate::Pin::new(3, &self.inner),
+            io0: crate::Pin::new(0, &self.0),
+            io1: crate::Pin::new(1, &self.0),
+            io2: crate::Pin::new(2, &self.0),
+            io3: crate::Pin::new(3, &self.0),
         }
     }
 }
