@@ -3,10 +3,10 @@
 mod common;
 pub mod dev;
 
+pub use common::mode;
 pub use common::I2cBus;
 pub use common::Pin;
 pub use common::Port;
-pub use common::mode;
 
 pub(crate) use common::Direction;
 pub(crate) use common::PortDriver;
