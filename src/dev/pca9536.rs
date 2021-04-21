@@ -1,18 +1,26 @@
 //! Support for the PCA9536 "4-bit I2C-bus and SMBus I/O port"
 
-pub struct Pca9536<I2C, M = shared_bus::NullMutex<Driver<I2C>>>
-where
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
-{
+pub struct Pca9536<M> {
     inner: M,
 }
 
-impl<I2C, M> Pca9536<I2C, M>
+impl<I2C> Pca9536<shared_bus::NullMutex<Driver<I2C>>>
+where
+    I2C: crate::I2cBus,
+{
+    pub fn new(i2c: I2C) -> Self {
+        Self {
+            inner: shared_bus::BusMutex::create(Driver::new(i2c)),
+        }
+    }
+}
+
+impl<I2C, M> Pca9536<M>
 where
     I2C: crate::I2cBus,
     M: shared_bus::BusMutex<Bus = Driver<I2C>>,
 {
-    pub fn new(i2c: I2C) -> Self {
+    pub fn with_mutex(i2c: I2C) -> Self {
         Self {
             inner: shared_bus::BusMutex::create(Driver::new(i2c)),
         }
@@ -28,7 +36,7 @@ where
     }
 }
 
-impl<I2C, M> crate::Port for Pca9536<I2C, M>
+impl<I2C, M> crate::Port for Pca9536<M>
 where
     I2C: crate::I2cBus,
     M: shared_bus::BusMutex<Bus = Driver<I2C>>,
@@ -41,10 +49,10 @@ where
     I2C: crate::I2cBus,
     M: shared_bus::BusMutex<Bus = Driver<I2C>>,
 {
-    pub io0: crate::Pin<'a, crate::mode::Input, M, Pca9536<I2C, M>>,
-    pub io1: crate::Pin<'a, crate::mode::Input, M, Pca9536<I2C, M>>,
-    pub io2: crate::Pin<'a, crate::mode::Input, M, Pca9536<I2C, M>>,
-    pub io3: crate::Pin<'a, crate::mode::Input, M, Pca9536<I2C, M>>,
+    pub io0: crate::Pin<'a, crate::mode::Input, M, Pca9536<M>>,
+    pub io1: crate::Pin<'a, crate::mode::Input, M, Pca9536<M>>,
+    pub io2: crate::Pin<'a, crate::mode::Input, M, Pca9536<M>>,
+    pub io3: crate::Pin<'a, crate::mode::Input, M, Pca9536<M>>,
 }
 
 #[allow(dead_code)]
@@ -136,7 +144,7 @@ mod tests {
         ];
         let mut bus = mock_i2c::Mock::new(&expectations);
 
-        let mut pca = super::Pca9536::<_, shared_bus::NullMutex<_>>::new(bus.clone());
+        let mut pca = super::Pca9536::new(bus.clone());
         let pca_pins = pca.split();
 
         let io0 = pca_pins.io0.into_output().unwrap();
