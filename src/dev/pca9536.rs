@@ -49,10 +49,10 @@ where
     I2C: crate::I2cBus,
     M: shared_bus::BusMutex<Bus = Driver<I2C>>,
 {
-    pub io0: crate::Pin<'a, crate::mode::Input, M, Pca9536<M>>,
-    pub io1: crate::Pin<'a, crate::mode::Input, M, Pca9536<M>>,
-    pub io2: crate::Pin<'a, crate::mode::Input, M, Pca9536<M>>,
-    pub io3: crate::Pin<'a, crate::mode::Input, M, Pca9536<M>>,
+    pub io0: crate::Pin<'a, crate::mode::Input, M>,
+    pub io1: crate::Pin<'a, crate::mode::Input, M>,
+    pub io2: crate::Pin<'a, crate::mode::Input, M>,
+    pub io3: crate::Pin<'a, crate::mode::Input, M>,
 }
 
 #[allow(dead_code)]

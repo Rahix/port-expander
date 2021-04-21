@@ -51,79 +51,67 @@ pub mod mode {
     pub struct Output;
 }
 
-pub struct Pin<'a, MODE, MUTEX, PORT>
-where
-    PORT: Port,
-    MUTEX: shared_bus::BusMutex<Bus = PORT::Driver>,
-{
+pub struct Pin<'a, MODE, MUTEX> {
     pin_mask: u32,
     port_driver: &'a MUTEX,
-    _p: PhantomData<MODE>,
-    _m: PhantomData<PORT>,
+    _m: PhantomData<MODE>,
 }
 
-impl<'a, MODE, MUTEX, PORT> Pin<'a, MODE, MUTEX, PORT>
+impl<'a, MODE, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
-    PORT: Port,
-    MUTEX: shared_bus::BusMutex<Bus = PORT::Driver>,
+    PD: PortDriver,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
     pub fn new(pin_number: u8, port_driver: &'a MUTEX) -> Self {
         assert!(pin_number < 32);
         Self {
             pin_mask: 1 << pin_number,
             port_driver,
-            _p: PhantomData,
             _m: PhantomData,
         }
     }
 
-    pub fn into_input(
-        self,
-    ) -> Result<Pin<'a, mode::Input, MUTEX, PORT>, <PORT::Driver as PortDriver>::Error> {
+    pub fn into_input(self) -> Result<Pin<'a, mode::Input, MUTEX>, PD::Error> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, Direction::Input))?;
         Ok(Pin {
             pin_mask: self.pin_mask,
             port_driver: self.port_driver,
-            _p: PhantomData,
             _m: PhantomData,
         })
     }
 
-    pub fn into_output(
-        self,
-    ) -> Result<Pin<'a, mode::Output, MUTEX, PORT>, <PORT::Driver as PortDriver>::Error> {
+    pub fn into_output(self) -> Result<Pin<'a, mode::Output, MUTEX>, PD::Error> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, Direction::Output))?;
         Ok(Pin {
             pin_mask: self.pin_mask,
             port_driver: self.port_driver,
-            _p: PhantomData,
             _m: PhantomData,
         })
     }
 }
 
-impl<'a, MUTEX, PORT> Pin<'a, mode::Input, MUTEX, PORT>
+impl<'a, MUTEX, PD> Pin<'a, mode::Input, MUTEX>
 where
-    PORT: Port,
-    MUTEX: shared_bus::BusMutex<Bus = PORT::Driver>,
+    PD: PortDriver,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
-    pub fn is_high(&self) -> Result<bool, <PORT::Driver as PortDriver>::Error> {
+    pub fn is_high(&self) -> Result<bool, PD::Error> {
         self.port_driver.lock(|drv| drv.is_high(self.pin_mask))
     }
 
-    pub fn is_low(&self) -> Result<bool, <PORT::Driver as PortDriver>::Error> {
+    pub fn is_low(&self) -> Result<bool, PD::Error> {
         self.port_driver.lock(|drv| drv.is_low(self.pin_mask))
     }
 }
 
-impl<'a, MUTEX, PORT> hal_digital::InputPin for Pin<'a, mode::Input, MUTEX, PORT>
+impl<'a, MUTEX, PD> hal_digital::InputPin for Pin<'a, mode::Input, MUTEX>
 where
-    PORT: Port,
-    MUTEX: shared_bus::BusMutex<Bus = PORT::Driver>,
+    PD: PortDriver,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
-    type Error = <PORT::Driver as PortDriver>::Error;
+    type Error = PD::Error;
 
     fn is_high(&self) -> Result<bool, Self::Error> {
         Pin::is_high(self)
@@ -134,38 +122,38 @@ where
     }
 }
 
-impl<'a, MUTEX, PORT> Pin<'a, mode::Output, MUTEX, PORT>
+impl<'a, MUTEX, PD> Pin<'a, mode::Output, MUTEX>
 where
-    PORT: Port,
-    MUTEX: shared_bus::BusMutex<Bus = PORT::Driver>,
+    PD: PortDriver,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
-    pub fn set_high(&self) -> Result<(), <PORT::Driver as PortDriver>::Error> {
+    pub fn set_high(&self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.set_high(self.pin_mask))
     }
 
-    pub fn set_low(&self) -> Result<(), <PORT::Driver as PortDriver>::Error> {
+    pub fn set_low(&self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.set_low(self.pin_mask))
     }
 
-    pub fn is_set_high(&self) -> Result<bool, <PORT::Driver as PortDriver>::Error> {
+    pub fn is_set_high(&self) -> Result<bool, PD::Error> {
         self.port_driver.lock(|drv| drv.is_set_high(self.pin_mask))
     }
 
-    pub fn is_set_low(&self) -> Result<bool, <PORT::Driver as PortDriver>::Error> {
+    pub fn is_set_low(&self) -> Result<bool, PD::Error> {
         self.port_driver.lock(|drv| drv.is_set_low(self.pin_mask))
     }
 
-    pub fn toggle(&self) -> Result<(), <PORT::Driver as PortDriver>::Error> {
+    pub fn toggle(&self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.toggle(self.pin_mask))
     }
 }
 
-impl<'a, MUTEX, PORT> hal_digital::OutputPin for Pin<'a, mode::Output, MUTEX, PORT>
+impl<'a, MUTEX, PD> hal_digital::OutputPin for Pin<'a, mode::Output, MUTEX>
 where
-    PORT: Port,
-    MUTEX: shared_bus::BusMutex<Bus = PORT::Driver>,
+    PD: PortDriver,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
-    type Error = <PORT::Driver as PortDriver>::Error;
+    type Error = PD::Error;
 
     fn set_low(&mut self) -> Result<(), Self::Error> {
         Pin::set_low(self)
@@ -176,10 +164,10 @@ where
     }
 }
 
-impl<'a, MUTEX, PORT> hal_digital::StatefulOutputPin for Pin<'a, mode::Output, MUTEX, PORT>
+impl<'a, MUTEX, PD> hal_digital::StatefulOutputPin for Pin<'a, mode::Output, MUTEX>
 where
-    PORT: Port,
-    MUTEX: shared_bus::BusMutex<Bus = PORT::Driver>,
+    PD: PortDriver,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
     fn is_set_high(&self) -> Result<bool, Self::Error> {
         Pin::is_set_high(self)
@@ -190,12 +178,12 @@ where
     }
 }
 
-impl<'a, MUTEX, PORT> hal_digital::ToggleableOutputPin for Pin<'a, mode::Output, MUTEX, PORT>
+impl<'a, MUTEX, PD> hal_digital::ToggleableOutputPin for Pin<'a, mode::Output, MUTEX>
 where
-    PORT: Port,
-    MUTEX: shared_bus::BusMutex<Bus = PORT::Driver>,
+    PD: PortDriver,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
-    type Error = <PORT::Driver as PortDriver>::Error;
+    type Error = PD::Error;
 
     fn toggle(&mut self) -> Result<(), Self::Error> {
         Pin::toggle(self)
