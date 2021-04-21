@@ -62,7 +62,7 @@ where
     PD: PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
-    pub fn new(pin_number: u8, port_driver: &'a MUTEX) -> Self {
+    pub(crate) fn new(pin_number: u8, port_driver: &'a MUTEX) -> Self {
         assert!(pin_number < 32);
         Self {
             pin_mask: 1 << pin_number,
