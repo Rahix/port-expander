@@ -1,7 +1,3 @@
-pub trait Port {
-    type Driver: PortDriver;
-}
-
 pub trait PortDriver {
     type Error;
 

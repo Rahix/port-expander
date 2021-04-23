@@ -31,14 +31,6 @@ where
     }
 }
 
-impl<I2C, M> crate::Port for Pca9536<M>
-where
-    I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
-{
-    type Driver = Driver<I2C>;
-}
-
 pub struct Parts<'a, I2C, M = shared_bus::NullMutex<Driver<I2C>>>
 where
     I2C: crate::I2cBus,

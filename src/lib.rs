@@ -7,7 +7,6 @@ mod pin;
 
 pub use bus::I2cBus;
 pub use common::mode;
-pub use common::Port;
 pub use pin::Pin;
 
 pub(crate) use bus::I2cExt;
