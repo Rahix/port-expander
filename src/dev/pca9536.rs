@@ -41,24 +41,9 @@ where
     pub io3: crate::Pin<'a, crate::mode::Input, M>,
 }
 
-#[allow(dead_code)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Regs {
-    InputPort = 0x00,
-    OutputPort = 0x01,
-    PolarityInversion = 0x02,
-    Configuration = 0x03,
-}
-
-impl From<Regs> for u8 {
-    fn from(r: Regs) -> u8 {
-        r as u8
-    }
-}
-
 const ADDRESS: u8 = 0x41;
 
-pub type Driver<I2C> = crate::driver::Driver8<I2C, crate::driver::Regs8Default, ADDRESS>;
+pub type Driver<I2C> = crate::driver::Driver8<I2C, ADDRESS>;
 
 #[cfg(test)]
 mod tests {
