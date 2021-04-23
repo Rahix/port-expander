@@ -1,4 +1,5 @@
 //! Support for the PCA9536 "4-bit I2C-bus and SMBus I/O port"
+use crate::I2cExt;
 
 pub struct Pca9536<M>(M);
 
@@ -58,6 +59,12 @@ enum Regs {
     Configuration = 0x03,
 }
 
+impl From<Regs> for u8 {
+    fn from(r: Regs) -> u8 {
+        r as u8
+    }
+}
+
 const ADDRESS: u8 = 0x41;
 
 pub struct Driver<I2C> {
@@ -76,15 +83,11 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
 
     fn set_high(&mut self, mask: u32) -> Result<(), Self::Error> {
         self.out |= mask as u8;
-        self.i2c
-            .write(ADDRESS, &[Regs::OutputPort as u8, self.out])?;
-        Ok(())
+        self.i2c.write_reg(ADDRESS, Regs::OutputPort, self.out)
     }
     fn set_low(&mut self, mask: u32) -> Result<(), Self::Error> {
         self.out &= !mask as u8;
-        self.i2c
-            .write(ADDRESS, &[Regs::OutputPort as u8, self.out])?;
-        Ok(())
+        self.i2c.write_reg(ADDRESS, Regs::OutputPort, self.out)
     }
     fn is_set_high(&mut self, mask: u32) -> Result<bool, Self::Error> {
         Ok(self.out & mask as u8 != 0)
@@ -94,26 +97,19 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     }
 
     fn is_high(&mut self, mask: u32) -> Result<bool, Self::Error> {
-        let mut buf = [0x00];
-        self.i2c
-            .write_read(ADDRESS, &[Regs::InputPort as u8], &mut buf)?;
-        Ok(buf[0] & mask as u8 != 0)
+        Ok(self.i2c.read_reg(ADDRESS, Regs::InputPort)? & mask as u8 != 0)
     }
     fn is_low(&mut self, mask: u32) -> Result<bool, Self::Error> {
         self.is_high(mask).map(|b| !b)
     }
 
     fn set_direction(&mut self, mask: u32, dir: crate::Direction) -> Result<(), Self::Error> {
-        let mut buf = [0x00];
+        let (mask_set, mask_clear) = match dir {
+            crate::Direction::Input => (mask as u8, 0),
+            crate::Direction::Output => (0, mask as u8),
+        };
         self.i2c
-            .write_read(ADDRESS, &[Regs::Configuration as u8], &mut buf)?;
-        match dir {
-            crate::Direction::Input => buf[0] |= mask as u8,
-            crate::Direction::Output => buf[0] &= !mask as u8,
-        }
-        self.i2c
-            .write(ADDRESS, &[Regs::Configuration as u8, buf[0]])?;
-        Ok(())
+            .update_reg(ADDRESS, Regs::Configuration, mask_set, mask_clear)
     }
 }
 
