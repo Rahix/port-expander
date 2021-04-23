@@ -3,9 +3,10 @@
 mod common;
 pub mod dev;
 mod pin;
+mod bus;
 
 pub use common::mode;
-pub use common::I2cBus;
+pub use bus::I2cBus;
 pub use common::Port;
 pub use pin::Pin;
 
