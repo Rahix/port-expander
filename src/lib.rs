@@ -2,11 +2,12 @@
 
 mod common;
 pub mod dev;
+mod pin;
 
 pub use common::mode;
 pub use common::I2cBus;
-pub use common::Pin;
 pub use common::Port;
+pub use pin::Pin;
 
 pub(crate) use common::Direction;
 pub(crate) use common::PortDriver;
