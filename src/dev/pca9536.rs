@@ -21,7 +21,7 @@ where
         Self(shared_bus::BusMutex::create(Driver::new(i2c)))
     }
 
-    pub fn split<'b>(&'b mut self) -> Parts<'b, I2C, M> {
+    pub fn split<'a>(&'a mut self) -> Parts<'a, I2C, M> {
         Parts {
             io0: crate::Pin::new(0, &self.0),
             io1: crate::Pin::new(1, &self.0),
