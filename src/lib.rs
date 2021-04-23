@@ -3,6 +3,7 @@
 mod bus;
 mod common;
 pub mod dev;
+pub mod driver;
 mod pin;
 
 pub use bus::I2cBus;
