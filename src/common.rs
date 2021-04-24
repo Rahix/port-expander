@@ -9,8 +9,6 @@ pub trait PortDriver {
     fn is_high(&mut self, mask: u32) -> Result<bool, Self::Error>;
     fn is_low(&mut self, mask: u32) -> Result<bool, Self::Error>;
 
-    fn set_direction(&mut self, mask: u32, dir: Direction) -> Result<(), Self::Error>;
-
     fn toggle(&mut self, mask: u32) -> Result<(), Self::Error> {
         if self.is_set_high(mask)? {
             self.set_low(mask)?;
@@ -19,6 +17,10 @@ pub trait PortDriver {
         }
         Ok(())
     }
+}
+
+pub trait PortDriverTotemPole: PortDriver {
+    fn set_direction(&mut self, mask: u32, dir: Direction) -> Result<(), Self::Error>;
 }
 
 pub enum Direction {

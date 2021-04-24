@@ -94,7 +94,9 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     fn is_low(&mut self, mask: u32) -> Result<bool, Self::Error> {
         self.is_high(mask).map(|b| !b)
     }
+}
 
+impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
     fn set_direction(&mut self, mask: u32, dir: crate::Direction) -> Result<(), Self::Error> {
         let (mask_set, mask_clear) = match dir {
             crate::Direction::Input => (mask as u8, 0),

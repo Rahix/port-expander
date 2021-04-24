@@ -12,6 +12,7 @@ pub use pin::Pin;
 pub(crate) use bus::I2cExt;
 pub(crate) use common::Direction;
 pub(crate) use common::PortDriver;
+pub(crate) use common::PortDriverTotemPole;
 
 pub use dev::pca9536::Pca9536;
 pub use dev::pca9555::Pca9555;

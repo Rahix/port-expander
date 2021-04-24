@@ -20,7 +20,13 @@ where
             _m: PhantomData,
         }
     }
+}
 
+impl<'a, MODE, MUTEX, PD> Pin<'a, MODE, MUTEX>
+where
+    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
+{
     pub fn into_input(self) -> Result<Pin<'a, crate::mode::Input, MUTEX>, PD::Error> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Input))?;
