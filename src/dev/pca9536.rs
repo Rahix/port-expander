@@ -1,4 +1,5 @@
 //! Support for the PCA9536 "4-bit I2C-bus and SMBus I/O port"
+use crate::I2cExt;
 
 pub struct Pca9536<M>(M);
 
@@ -41,9 +42,68 @@ where
     pub io3: crate::Pin<'a, crate::mode::Input, M>,
 }
 
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Regs {
+    InputPort = 0x00,
+    OutputPort = 0x01,
+    PolarityInversion = 0x02,
+    Configuration = 0x03,
+}
+
+impl From<Regs> for u8 {
+    fn from(r: Regs) -> u8 {
+        r as u8
+    }
+}
+
 const ADDRESS: u8 = 0x41;
 
-pub type Driver<I2C> = crate::driver::Driver8<I2C, ADDRESS>;
+pub struct Driver<I2C> {
+    i2c: I2C,
+    out: u8,
+}
+
+impl<I2C> Driver<I2C> {
+    pub fn new(i2c: I2C) -> Self {
+        Self { i2c, out: 0xff }
+    }
+}
+
+impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
+    type Error = I2C::BusError;
+
+    fn set_high(&mut self, mask: u32) -> Result<(), Self::Error> {
+        self.out |= mask as u8;
+        self.i2c.write_reg(ADDRESS, Regs::OutputPort, self.out)
+    }
+    fn set_low(&mut self, mask: u32) -> Result<(), Self::Error> {
+        self.out &= !mask as u8;
+        self.i2c.write_reg(ADDRESS, Regs::OutputPort, self.out)
+    }
+    fn is_set_high(&mut self, mask: u32) -> Result<bool, Self::Error> {
+        Ok(self.out & mask as u8 != 0)
+    }
+    fn is_set_low(&mut self, mask: u32) -> Result<bool, Self::Error> {
+        Ok(self.out & mask as u8 == 0)
+    }
+
+    fn is_high(&mut self, mask: u32) -> Result<bool, Self::Error> {
+        Ok(self.i2c.read_reg(ADDRESS, Regs::InputPort)? & mask as u8 != 0)
+    }
+    fn is_low(&mut self, mask: u32) -> Result<bool, Self::Error> {
+        self.is_high(mask).map(|b| !b)
+    }
+
+    fn set_direction(&mut self, mask: u32, dir: crate::Direction) -> Result<(), Self::Error> {
+        let (mask_set, mask_clear) = match dir {
+            crate::Direction::Input => (mask as u8, 0),
+            crate::Direction::Output => (0, mask as u8),
+        };
+        self.i2c
+            .update_reg(ADDRESS, Regs::Configuration, mask_set, mask_clear)
+    }
+}
 
 #[cfg(test)]
 mod tests {
