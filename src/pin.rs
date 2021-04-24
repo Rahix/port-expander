@@ -42,7 +42,7 @@ where
     }
 }
 
-impl<'a, MUTEX, PD> Pin<'a, crate::mode::Input, MUTEX>
+impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
@@ -56,7 +56,7 @@ where
     }
 }
 
-impl<'a, MUTEX, PD> hal_digital::InputPin for Pin<'a, crate::mode::Input, MUTEX>
+impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> hal_digital::InputPin for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
@@ -72,7 +72,7 @@ where
     }
 }
 
-impl<'a, MUTEX, PD> Pin<'a, crate::mode::Output, MUTEX>
+impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
@@ -98,7 +98,7 @@ where
     }
 }
 
-impl<'a, MUTEX, PD> hal_digital::OutputPin for Pin<'a, crate::mode::Output, MUTEX>
+impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::OutputPin for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
@@ -114,7 +114,8 @@ where
     }
 }
 
-impl<'a, MUTEX, PD> hal_digital::StatefulOutputPin for Pin<'a, crate::mode::Output, MUTEX>
+impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::StatefulOutputPin
+    for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
@@ -128,7 +129,8 @@ where
     }
 }
 
-impl<'a, MUTEX, PD> hal_digital::ToggleableOutputPin for Pin<'a, crate::mode::Output, MUTEX>
+impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::ToggleableOutputPin
+    for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
