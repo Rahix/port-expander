@@ -8,7 +8,7 @@ where
     I2C: crate::I2cBus,
 {
     pub fn new(i2c: I2C) -> Self {
-        Self(shared_bus::BusMutex::create(Driver::new(i2c)))
+        Self::with_mutex(i2c)
     }
 }
 
