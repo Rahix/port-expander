@@ -28,16 +28,22 @@ pub enum Direction {
     Output,
 }
 
+/// Pin Modes
 pub mod mode {
+    /// Trait for pin-modes which can be used to set a logic level.
     pub trait HasOutput {}
+    /// Trait for pin-modes which can be used to read a logic level.
     pub trait HasInput {}
 
+    /// Pin configured as an input.
     pub struct Input;
     impl HasInput for Input {}
 
+    /// Pin configured as an output.
     pub struct Output;
     impl HasOutput for Output {}
 
+    /// Pin configured as a quasi-bidirectional input/output.
     pub struct QuasiBidirectional;
     impl HasInput for QuasiBidirectional {}
     impl HasOutput for QuasiBidirectional {}

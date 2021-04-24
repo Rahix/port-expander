@@ -1,6 +1,10 @@
 use core::marker::PhantomData;
 use embedded_hal::digital::v2 as hal_digital;
 
+/// Representation of a port-expander pin.
+///
+/// `Pin` is not constructed directly, this type is created by instanciating a port-expander and
+/// then getting access to all its pins using the `.split()` method.
 pub struct Pin<'a, MODE, MUTEX> {
     pin_mask: u32,
     port_driver: &'a MUTEX,

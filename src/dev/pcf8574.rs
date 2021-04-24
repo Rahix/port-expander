@@ -1,6 +1,8 @@
-//! Support for the PCF8574 & PCF8574A "Remote 8-bit I/O expander for I2C-bus with interrupt"
+//! Support for the `PCF8574` & `PCF8574A` "Remote 8-bit I/O expander for I2C-bus with interrupt"
 
+/// `PCF8574` "Remote 8-bit I/O expander for I2C-bus with interrupt"
 pub struct Pcf8574<M>(M);
+/// `PCF8574A` "Remote 8-bit I/O expander for I2C-bus with interrupt"
 pub struct Pcf8574a<M>(M);
 
 impl<I2C> Pcf8574<shared_bus::NullMutex<Driver<I2C>>>

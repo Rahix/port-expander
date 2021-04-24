@@ -1,6 +1,7 @@
-//! Support for the PCA9555 "16-bit I2C-bus and SMBus I/O port with interrupt"
+//! Support for the `PCA9555` "16-bit I2C-bus and SMBus I/O port with interrupt"
 use crate::I2cExt;
 
+/// `PCA9555` "16-bit I2C-bus and SMBus I/O port with interrupt"
 pub struct Pca9555<M>(M);
 
 impl<I2C> Pca9555<shared_bus::NullMutex<Driver<I2C>>>

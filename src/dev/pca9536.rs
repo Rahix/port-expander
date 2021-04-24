@@ -1,6 +1,7 @@
-//! Support for the PCA9536 "4-bit I2C-bus and SMBus I/O port"
+//! Support for the `PCA9536` "4-bit I2C-bus and SMBus I/O port"
 use crate::I2cExt;
 
+/// `PCA9536` "4-bit I2C-bus and SMBus I/O port"
 pub struct Pca9536<M>(M);
 
 impl<I2C> Pca9536<shared_bus::NullMutex<Driver<I2C>>>
