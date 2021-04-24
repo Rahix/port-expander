@@ -87,11 +87,11 @@ where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
-    pub fn set_high(&self) -> Result<(), PD::Error> {
+    pub fn set_high(&mut self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.set_high(self.pin_mask))
     }
 
-    pub fn set_low(&self) -> Result<(), PD::Error> {
+    pub fn set_low(&mut self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.set_low(self.pin_mask))
     }
 
@@ -103,7 +103,7 @@ where
         self.port_driver.lock(|drv| drv.is_set_low(self.pin_mask))
     }
 
-    pub fn toggle(&self) -> Result<(), PD::Error> {
+    pub fn toggle(&mut self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.toggle(self.pin_mask))
     }
 }

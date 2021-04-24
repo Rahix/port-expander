@@ -154,7 +154,7 @@ mod tests {
         let mut bus = mock_i2c::Mock::new(&expectations);
 
         let mut pcf = super::Pcf8574::new(bus.clone(), true, false, false);
-        let pcf_pins = pcf.split();
+        let mut pcf_pins = pcf.split();
 
         pcf_pins.p2.set_high().unwrap();
         pcf_pins.p2.set_low().unwrap();
@@ -176,7 +176,7 @@ mod tests {
         let mut bus = mock_i2c::Mock::new(&expectations);
 
         let mut pcf_a = super::Pcf8574a::new(bus.clone(), true, false, false);
-        let pcf_a_pins = pcf_a.split();
+        let mut pcf_a_pins = pcf_a.split();
 
         pcf_a_pins.p4.set_high().unwrap();
         pcf_a_pins.p4.set_low().unwrap();

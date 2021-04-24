@@ -138,7 +138,7 @@ mod tests {
         let pca_pins = pca.split();
 
         let io0 = pca_pins.io0.into_output().unwrap();
-        let io1 = pca_pins.io1.into_output().unwrap();
+        let mut io1 = pca_pins.io1.into_output().unwrap();
 
         let io0 = io0.into_input().unwrap();
 

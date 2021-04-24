@@ -221,11 +221,11 @@ mod tests {
         let mut pca = super::Pca9555::new(bus.clone(), false, true, false);
         let pca_pins = pca.split();
 
-        let io0_0 = pca_pins.io0_0.into_output().unwrap();
+        let mut io0_0 = pca_pins.io0_0.into_output().unwrap();
         let io0_7 = pca_pins.io0_7.into_output().unwrap();
         let io0_7 = io0_7.into_input().unwrap();
 
-        let io1_0 = pca_pins.io1_0.into_output().unwrap();
+        let mut io1_0 = pca_pins.io1_0.into_output().unwrap();
         let io1_7 = pca_pins.io1_7.into_output().unwrap();
         let io1_7 = io1_7.into_input().unwrap();
 
