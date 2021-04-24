@@ -1,4 +1,4 @@
-`port-expander`
+`port-expander` [![crates.io page](https://img.shields.io/crates/v/port-expander.svg)](https://crates.io/crates/port-expander) [![docs.rs page](https://docs.rs/port-expander/badge.svg)](https://docs.rs/port-expander)
 ===============
 This is a crate providing a common abstraction for I²C port-expanders.  This
 abstraction is not necessarily the most performant, but it allows using the pins
