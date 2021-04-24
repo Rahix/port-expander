@@ -1,10 +1,16 @@
 [package]
 name = "port-expander"
-version = "0.1.0"
+description = "Abstraction for I2C port-expanders"
 authors = ["Rahix <rahix@rahix.de>"]
-edition = "2018"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/rahix/port-expander"
+readme = "README.md"
+keywords = ["i2c", "shared-bus", "pca", "pcf", "gpio"]
+categories = ["embedded", "no-std", "hardware-support"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+version = "0.1.0"
+
+edition = "2018"
 
 [dependencies]
 embedded-hal = { version = "0.2.4", features = ["unproven"] }
