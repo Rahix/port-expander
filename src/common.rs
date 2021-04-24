@@ -29,16 +29,16 @@ pub enum Direction {
 }
 
 pub mod mode {
-    pub trait HasOutput { }
-    pub trait HasInput { }
+    pub trait HasOutput {}
+    pub trait HasInput {}
 
     pub struct Input;
-    impl HasInput for Input { }
+    impl HasInput for Input {}
 
     pub struct Output;
-    impl HasOutput for Output { }
+    impl HasOutput for Output {}
 
     pub struct QuasiBidirectional;
-    impl HasInput for QuasiBidirectional { }
-    impl HasOutput for QuasiBidirectional { }
+    impl HasInput for QuasiBidirectional {}
+    impl HasOutput for QuasiBidirectional {}
 }
