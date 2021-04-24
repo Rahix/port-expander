@@ -14,3 +14,4 @@ pub(crate) use common::Direction;
 pub(crate) use common::PortDriver;
 
 pub use dev::pca9536::Pca9536;
+pub use dev::pca9555::Pca9555;
