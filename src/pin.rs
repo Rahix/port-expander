@@ -58,11 +58,13 @@ where
     MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
     pub fn is_high(&self) -> Result<bool, PD::Error> {
-        self.port_driver.lock(|drv| drv.is_high(self.pin_mask))
+        self.port_driver
+            .lock(|drv| Ok(drv.get(self.pin_mask, 0)? == self.pin_mask))
     }
 
     pub fn is_low(&self) -> Result<bool, PD::Error> {
-        self.port_driver.lock(|drv| drv.is_low(self.pin_mask))
+        self.port_driver
+            .lock(|drv| Ok(drv.get(0, self.pin_mask)? == self.pin_mask))
     }
 }
 
@@ -88,19 +90,21 @@ where
     MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
     pub fn set_high(&mut self) -> Result<(), PD::Error> {
-        self.port_driver.lock(|drv| drv.set_high(self.pin_mask))
+        self.port_driver.lock(|drv| drv.set(self.pin_mask, 0))
     }
 
     pub fn set_low(&mut self) -> Result<(), PD::Error> {
-        self.port_driver.lock(|drv| drv.set_low(self.pin_mask))
+        self.port_driver.lock(|drv| drv.set(0, self.pin_mask))
     }
 
     pub fn is_set_high(&self) -> Result<bool, PD::Error> {
-        self.port_driver.lock(|drv| drv.is_set_high(self.pin_mask))
+        self.port_driver
+            .lock(|drv| Ok(drv.is_set(self.pin_mask, 0)? == self.pin_mask))
     }
 
     pub fn is_set_low(&self) -> Result<bool, PD::Error> {
-        self.port_driver.lock(|drv| drv.is_set_low(self.pin_mask))
+        self.port_driver
+            .lock(|drv| Ok(drv.is_set(0, self.pin_mask)? == self.pin_mask))
     }
 
     pub fn toggle(&mut self) -> Result<(), PD::Error> {
