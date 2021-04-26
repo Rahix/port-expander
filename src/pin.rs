@@ -24,6 +24,14 @@ where
             _m: PhantomData,
         }
     }
+
+    pub(crate) fn pin_mask(&self) -> u32 {
+        self.pin_mask
+    }
+
+    pub(crate) fn port_driver<'b>(&'b self) -> &'b MUTEX {
+        &self.port_driver
+    }
 }
 
 impl<'a, MODE, MUTEX, PD> Pin<'a, MODE, MUTEX>
