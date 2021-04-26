@@ -1,3 +1,33 @@
+/// Set multiple pins at the same time.
+///
+/// The usual method of setting multiple pins
+///
+/// ```no_run
+/// # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+/// # let mut pcf = port_expander::Pcf8574::new(i2c, false, false, false);
+/// # let p = pcf.split();
+/// # let mut io0 = p.p0;
+/// # let mut io1 = p.p1;
+/// io0.set_high().unwrap();
+/// io1.set_low().unwrap();
+/// ```
+///
+/// can be problematic because the time between the two operations might be significant (they are
+/// done as two separate bus transactions).  If it is desired that multiple pins change state in a
+/// single bus transaction, the `write_multiple()` function provides an interface to do this.
+///
+/// ## Example
+/// ```no_run
+/// # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+/// # let mut pcf = port_expander::Pcf8574::new(i2c, false, false, false);
+/// # let p = pcf.split();
+/// # let mut io0 = p.p0;
+/// # let mut io1 = p.p1;
+/// port_expander::write_multiple(
+///     [&mut io0, &mut io1],
+///     [true, false],
+/// ).unwrap();
+/// ```
 pub fn write_multiple<PD, MUTEX, MODE: crate::mode::HasOutput, const N: usize>(
     mut pins: [&mut crate::Pin<'_, MODE, MUTEX>; N],
     states: [bool; N],
@@ -23,6 +53,44 @@ where
     })
 }
 
+/// Read multiple pins at the same time.
+///
+/// When a port-expander sends an interrupt that one of its inputs changed state, it might be
+/// important to find out which input was responsible as quickly as possible _and_ by checking all
+/// inputs at once.  The naive approach of checking the pins in order
+///
+/// ```no_run
+/// # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+/// # let mut pcf = port_expander::Pcf8574::new(i2c, false, false, false);
+/// # let p = pcf.split();
+/// # let io0 = p.p0;
+/// # let io1 = p.p1;
+/// if io0.is_high().unwrap() {
+///     // ...
+/// } else if io1.is_high().unwrap() {
+///     // ...
+/// }
+/// ```
+///
+/// is suboptimal because each read will happen as its own bus transaction and there is thus quite
+/// some delay.  Also the pins are checked one after the other, not all at once, which could lead
+/// to glitches.  The `read_multiple()` function provides an interface to circumvent these
+/// problems.
+///
+/// ## Example
+/// ```no_run
+/// # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+/// # let mut pcf = port_expander::Pcf8574::new(i2c, false, false, false);
+/// # let p = pcf.split();
+/// # let io0 = p.p0;
+/// # let io1 = p.p1;
+/// let values = port_expander::read_multiple([&io0, &io1]).unwrap();
+/// if values[0] {
+///     // ...
+/// } else if values[1] {
+///     // ...
+/// }
+/// ```
 pub fn read_multiple<PD, MUTEX, MODE: crate::mode::HasInput, const N: usize>(
     pins: [&crate::Pin<'_, MODE, MUTEX>; N],
 ) -> Result<[bool; N], PD::Error>

@@ -1,8 +1,7 @@
-//! This is a crate providing a common abstraction for I²C port-expanders.  This
-//! abstraction is not necessarily the most performant, but it allows using the pins
-//! just like direct GPIOs.  Because the pin types also implement the `embedded-hal`
-//! digital IO traits, they can also be passed to further drivers downstream (e.g.
-//! as a reset or chip-select pin).
+//! This is a crate providing a common abstraction for I²C port-expanders.  This abstraction is not
+//! necessarily the most performant, but it allows using the pins just like direct GPIOs.  Because
+//! the pin types also implement the `embedded-hal` digital IO traits, they can also be passed to
+//! further drivers downstream (e.g.  as a reset or chip-select pin).
 //!
 //! ## Example
 //! ```no_run
@@ -21,10 +20,15 @@
 //! assert!(io1_5.is_high().unwrap());
 //! ```
 //!
+//! ## Accessing multiple pins at the same time
+//! Sometimes timing constraints mandate that multiple pin accesses (reading or writing) happen at
+//! the same time.  The [`write_multiple()`] and [`read_multiple()`] methods are designed for doing
+//! this.
+//!
 //! ## Supported Devices
-//! The following list is what `port-expander` currently supports.  If you needs
-//! support for an additional device, it should be easy to add.  It's best to take
-//! a similar existing implementation as inspiration.  Contributions welcome!
+//! The following list is what `port-expander` currently supports.  If you needs support for an
+//! additional device, it should be easy to add.  It's best to take a similar existing
+//! implementation as inspiration.  Contributions welcome!
 //!
 //! - [`PCA9536`](Pca9536)
 //! - [`PCA9555`](Pca9555)
@@ -32,10 +36,9 @@
 //! - [`PCF8574`](Pcf8574)
 //!
 //! ## Non-local sharing
-//! `port-expander` uses the `BusMutex` from
-//! [`shared-bus`](https://crates.io/crates/shared-bus) under the hood.  This means
-//! you can also make the pins shareable across task/thread boundaries, given that
-//! you provide an appropriate mutex type:
+//! `port-expander` uses the `BusMutex` from [`shared-bus`](https://crates.io/crates/shared-bus)
+//! under the hood.  This means you can also make the pins shareable across task/thread boundaries,
+//! given that you provide an appropriate mutex type:
 //!
 //! ```ignore
 //! // Initialize I2C peripheral from HAL
