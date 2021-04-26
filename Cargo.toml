@@ -8,7 +8,7 @@ readme = "README.md"
 keywords = ["i2c", "shared-bus", "pca", "pcf", "gpio"]
 categories = ["embedded", "no-std", "hardware-support"]
 
-version = "0.2.0"
+version = "0.2.1"
 
 edition = "2018"
 
