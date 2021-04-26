@@ -106,53 +106,37 @@ impl<I2C> Driver<I2C> {
 impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     type Error = I2C::BusError;
 
-    fn set_high(&mut self, mask: u32) -> Result<(), Self::Error> {
-        self.out |= mask as u16;
-        if mask & 0x00FF != 0 {
+    fn set(&mut self, mask_high: u32, mask_low: u32) -> Result<(), Self::Error> {
+        self.out |= mask_high as u16;
+        self.out &= !mask_low as u16;
+        if (mask_high | mask_low) & 0x00FF != 0 {
             self.i2c
                 .write_reg(self.addr, Regs::OutputPort0, (self.out & 0xFF) as u8)?;
         }
-        if mask & 0xFF00 != 0 {
+        if (mask_high | mask_low) & 0xFF00 != 0 {
             self.i2c
                 .write_reg(self.addr, Regs::OutputPort1, (self.out >> 8) as u8)?;
         }
         Ok(())
-    }
-    fn set_low(&mut self, mask: u32) -> Result<(), Self::Error> {
-        self.out &= !mask as u16;
-        if mask & 0x00FF != 0 {
-            self.i2c
-                .write_reg(self.addr, Regs::OutputPort0, (self.out & 0xFF) as u8)?;
-        }
-        if mask & 0xFF00 != 0 {
-            self.i2c
-                .write_reg(self.addr, Regs::OutputPort1, (self.out >> 8) as u8)?;
-        }
-        Ok(())
-    }
-    fn is_set_high(&mut self, mask: u32) -> Result<bool, Self::Error> {
-        Ok(self.out & mask as u16 != 0)
-    }
-    fn is_set_low(&mut self, mask: u32) -> Result<bool, Self::Error> {
-        Ok(self.out & mask as u16 == 0)
     }
 
-    fn is_high(&mut self, mask: u32) -> Result<bool, Self::Error> {
-        let io0 = if mask & 0x00FF != 0 {
+    fn is_set(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
+        Ok(((self.out as u32) & mask_high) | (!(self.out as u32) & mask_low))
+    }
+
+    fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
+        let io0 = if (mask_high | mask_low) & 0x00FF != 0 {
             self.i2c.read_reg(self.addr, Regs::InputPort0)?
         } else {
             0
         };
-        let io1 = if mask & 0xFF00 != 0 {
+        let io1 = if (mask_high | mask_low) & 0xFF00 != 0 {
             self.i2c.read_reg(self.addr, Regs::InputPort1)?
         } else {
             0
         };
-        let in_ = ((io1 as u16) << 8) | io0 as u16;
-        Ok(in_ & mask as u16 != 0)
-    }
-    fn is_low(&mut self, mask: u32) -> Result<bool, Self::Error> {
-        self.is_high(mask).map(|b| !b)
+        let in_ = ((io1 as u32) << 8) | io0 as u32;
+        Ok((in_ & mask_high) | (!in_ & mask_low))
     }
 }
 
