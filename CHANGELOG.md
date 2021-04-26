@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Added the `write_multiple()` and `read_multiple()` functions to set/get
+  multiple pin-states in a single bus transaction.
+
+### Changed
+- The internal `PortDriver` trait was redesigned to better fit its requirements.
 
 
 ## [0.2.0] - 2021-04-24
