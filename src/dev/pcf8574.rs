@@ -112,30 +112,22 @@ impl<I2C> Driver<I2C> {
 impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     type Error = I2C::BusError;
 
-    fn set_high(&mut self, mask: u32) -> Result<(), Self::Error> {
-        self.out |= mask as u8;
+    fn set(&mut self, mask_high: u32, mask_low: u32) -> Result<(), Self::Error> {
+        self.out |= mask_high as u8;
+        self.out &= !mask_low as u8;
         self.i2c.write(self.addr, &[self.out])?;
         Ok(())
-    }
-    fn set_low(&mut self, mask: u32) -> Result<(), Self::Error> {
-        self.out &= !mask as u8;
-        self.i2c.write(self.addr, &[self.out])?;
-        Ok(())
-    }
-    fn is_set_high(&mut self, mask: u32) -> Result<bool, Self::Error> {
-        Ok(self.out & mask as u8 != 0)
-    }
-    fn is_set_low(&mut self, mask: u32) -> Result<bool, Self::Error> {
-        Ok(self.out & mask as u8 == 0)
     }
 
-    fn is_high(&mut self, mask: u32) -> Result<bool, Self::Error> {
+    fn is_set(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
+        Ok(((self.out as u32) & mask_high) | (!(self.out as u32) & mask_low))
+    }
+
+    fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
         let mut buf = [0x00];
         self.i2c.read(self.addr, &mut buf)?;
-        Ok(buf[0] & mask as u8 != 0)
-    }
-    fn is_low(&mut self, mask: u32) -> Result<bool, Self::Error> {
-        self.is_high(mask).map(|b| !b)
+        let in_ = buf[0] as u32;
+        Ok((in_ & mask_high) | (!in_ & mask_low))
     }
 }
 
