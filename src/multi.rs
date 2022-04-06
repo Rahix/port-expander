@@ -137,6 +137,45 @@ mod tests {
     }
 
     #[test]
+    fn pcf8575_write_multiple() {
+        let expectations = [
+            // single writes for multiple pins
+            mock_i2c::Transaction::write(0x21, vec![0b10111011, 0b11011101]),
+            mock_i2c::Transaction::write(0x21, vec![0b10101111, 0b11010111]),
+        ];
+        let mut bus = mock_i2c::Mock::new(&expectations);
+
+        let mut pcf = crate::Pcf8575::new(bus.clone(), true, false, false);
+        let mut pcf_pins = pcf.split();
+
+        super::write_multiple(
+            [
+                &mut pcf_pins.p02,
+                &mut pcf_pins.p04,
+                &mut pcf_pins.p06,
+                &mut pcf_pins.p11,
+                &mut pcf_pins.p13,
+                &mut pcf_pins.p15,
+            ],
+            [false, true, false, false, true, false],
+        )
+        .unwrap();
+
+        super::write_multiple(
+            [
+                &mut pcf_pins.p02,
+                &mut pcf_pins.p04,
+                &mut pcf_pins.p11,
+                &mut pcf_pins.p13,
+            ],
+            [true, false, true, false],
+        )
+        .unwrap();
+
+        bus.done();
+    }
+
+    #[test]
     fn pca9536_read_multiple() {
         let expectations = [
             // single reads for multiple pins
