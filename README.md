@@ -39,6 +39,7 @@ a similar existing implementation as inspiration.  Contributions welcome!
 - [`PCA9555`](https://docs.rs/port-expander/latest/port_expander/dev/pca9555/struct.Pca9555.html)
 - [`PCF8574A`](https://docs.rs/port-expander/latest/port_expander/dev/pcf8574/struct.Pcf8574a.html)
 - [`PCF8574`](https://docs.rs/port-expander/latest/port_expander/dev/pcf8574/struct.Pcf8574.html)
+- [`PCF8575`](https://docs.rs/port-expander/latest/port_expander/dev/pcf8575/struct.Pcf8575.html)
 
 ## Non-local sharing
 `port-expander` uses the `BusMutex` from

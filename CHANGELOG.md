@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Added support for `PCF8575`
+
 
 ## [0.2.1] - 2021-04-26
 ### Added
