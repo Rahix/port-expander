@@ -35,6 +35,7 @@
 //! - [`PCF8574A`](Pcf8574a)
 //! - [`PCF8574`](Pcf8574)
 //! - [`PCF8575`](Pcf8575)
+//! - [`MCP23017`](Mcp23017)
 //!
 //! ## Non-local sharing
 //! `port-expander` uses the `BusMutex` from [`shared-bus`](https://crates.io/crates/shared-bus)
@@ -76,3 +77,4 @@ pub use dev::pca9555::Pca9555;
 pub use dev::pcf8574::Pcf8574;
 pub use dev::pcf8574::Pcf8574a;
 pub use dev::pcf8575::Pcf8575;
+pub use dev::mcp23017::Mcp23017;
