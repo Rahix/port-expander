@@ -7,3 +7,4 @@ pub mod pca9536;
 pub mod pca9555;
 pub mod pcf8574;
 pub mod pcf8575;
+pub mod mcp23017;

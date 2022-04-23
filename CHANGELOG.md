@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Added support for `PCF8575` ([#1]).
+- Added support for `MCP23017` ([#2]).
 
 [#1]: https://github.com/Rahix/port-expander/pull/1
+[#2]: https://github.com/Rahix/port-expander/pull/2
 
 
 ## [0.2.1] - 2021-04-26
