@@ -39,6 +39,9 @@ where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
+    /// Configure this pin as an input.
+    ///
+    /// The exact electrical details depend on the port-expander device which is used.
     pub fn into_input(self) -> Result<Pin<'a, crate::mode::Input, MUTEX>, PD::Error> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Input, false))?;
@@ -49,6 +52,10 @@ where
         })
     }
 
+    /// Configure this pin as an output with an initial LOW state.
+    ///
+    /// The LOW state is, as long as he port-expander chip allows this, entered without any
+    /// electrical glitch.
     pub fn into_output(self) -> Result<Pin<'a, crate::mode::Output, MUTEX>, PD::Error> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Output, false))?;
@@ -59,6 +66,10 @@ where
         })
     }
 
+    /// Configure this pin as an output with an initial HIGH state.
+    ///
+    /// The HIGH state is, as long as he port-expander chip allows this, entered without any
+    /// electrical glitch.
     pub fn into_output_high(self) -> Result<Pin<'a, crate::mode::Output, MUTEX>, PD::Error> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Output, true))?;
@@ -75,11 +86,13 @@ where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
+    /// Read the pin's input state and return `true` if it is HIGH.
     pub fn is_high(&self) -> Result<bool, PD::Error> {
         self.port_driver
             .lock(|drv| Ok(drv.get(self.pin_mask, 0)? == self.pin_mask))
     }
 
+    /// Read the pin's input state and return `true` if it is LOW.
     pub fn is_low(&self) -> Result<bool, PD::Error> {
         self.port_driver
             .lock(|drv| Ok(drv.get(0, self.pin_mask)? == self.pin_mask))
@@ -107,24 +120,37 @@ where
     PD: crate::PortDriver,
     MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
+    /// Set the pin's output state to HIGH.
+    ///
+    /// Note that this can have different electrical meanings depending on the port-expander chip.
     pub fn set_high(&mut self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.set(self.pin_mask, 0))
     }
 
+    /// Set the pin's output state to LOW.
+    ///
+    /// Note that this can have different electrical meanings depending on the port-expander chip.
     pub fn set_low(&mut self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.set(0, self.pin_mask))
     }
 
+    /// Return `true` if the pin's output state is HIGH.
+    ///
+    /// This method does **not** read the pin's electrical state.
     pub fn is_set_high(&self) -> Result<bool, PD::Error> {
         self.port_driver
             .lock(|drv| Ok(drv.is_set(self.pin_mask, 0)? == self.pin_mask))
     }
 
+    /// Return `true` if the pin's output state is LOW.
+    ///
+    /// This method does **not** read the pin's electrical state.
     pub fn is_set_low(&self) -> Result<bool, PD::Error> {
         self.port_driver
             .lock(|drv| Ok(drv.is_set(0, self.pin_mask)? == self.pin_mask))
     }
 
+    /// Toggle the pin's output state.
     pub fn toggle(&mut self) -> Result<(), PD::Error> {
         self.port_driver.lock(|drv| drv.toggle(self.pin_mask))
     }
