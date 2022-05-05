@@ -17,8 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   state without a glitch.  Previously, it would leave the pin in whatever state
   it was last in (= most often the HIGH state)  ([#3]).
 
+### Fixed
+- Fixed `read_multiple()` and `write_multiple()` not ensuring that all passed
+  pins actually belong to the same port-expander chip ([#4]).
+
 [#1]: https://github.com/Rahix/port-expander/pull/1
 [#3]: https://github.com/Rahix/port-expander/pull/3
+[#4]: https://github.com/Rahix/port-expander/pull/4
 
 
 ## [0.2.1] - 2021-04-26
