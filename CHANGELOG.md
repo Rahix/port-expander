@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added support for `PCF8575` ([#1]).
 - Added support for `PCA9538`.
+- Added `into_output_high()` for totem-pole output drivers.  In contrast to
+  `into_output()` this will immediately put the pin into a HIGH state, thus
+  preventing a short glitch between setting direction and pin value.
+
+### Changed
+- `into_output()` for totem-pole output drivers now puts the pin into a LOW
+  state without a glitch.  Previously, it would leave the pin in whatever state
+  it was last in (= most often the HIGH state).
 
 [#1]: https://github.com/Rahix/port-expander/pull/1
 

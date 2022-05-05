@@ -75,9 +75,15 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     type Error = I2C::BusError;
 
     fn set(&mut self, mask_high: u32, mask_low: u32) -> Result<(), Self::Error> {
+        let previous = self.out;
         self.out |= mask_high as u8;
         self.out &= !mask_low as u8;
-        self.i2c.write_reg(ADDRESS, Regs::OutputPort, self.out)
+        if self.out != previous {
+            self.i2c.write_reg(ADDRESS, Regs::OutputPort, self.out)
+        } else {
+            // don't do the transfer when nothing changed
+            Ok(())
+        }
     }
 
     fn is_set(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
@@ -91,7 +97,22 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
 }
 
 impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
-    fn set_direction(&mut self, mask: u32, dir: crate::Direction) -> Result<(), Self::Error> {
+    fn set_direction(
+        &mut self,
+        mask: u32,
+        dir: crate::Direction,
+        state: bool,
+    ) -> Result<(), Self::Error> {
+        // set state before switching direction to prevent glitch
+        if dir == crate::Direction::Output {
+            use crate::PortDriver;
+            if state {
+                self.set(mask, 0)?;
+            } else {
+                self.set(0, mask)?;
+            }
+        }
+
         let (mask_set, mask_clear) = match dir {
             crate::Direction::Input => (mask as u8, 0),
             crate::Direction::Output => (0, mask as u8),
@@ -109,6 +130,7 @@ mod tests {
     fn pca9536() {
         let expectations = [
             // pin setup io0
+            mock_i2c::Transaction::write(super::ADDRESS, vec![0x01, 0xfe]),
             mock_i2c::Transaction::write_read(super::ADDRESS, vec![0x03], vec![0xff]),
             mock_i2c::Transaction::write(super::ADDRESS, vec![0x03, 0xfe]),
             // pin setup io1
@@ -118,9 +140,9 @@ mod tests {
             mock_i2c::Transaction::write_read(super::ADDRESS, vec![0x03], vec![0xfc]),
             mock_i2c::Transaction::write(super::ADDRESS, vec![0x03, 0xfd]),
             // io1 writes
-            mock_i2c::Transaction::write(super::ADDRESS, vec![0x01, 0xfd]),
-            mock_i2c::Transaction::write(super::ADDRESS, vec![0x01, 0xff]),
-            mock_i2c::Transaction::write(super::ADDRESS, vec![0x01, 0xfd]),
+            mock_i2c::Transaction::write(super::ADDRESS, vec![0x01, 0xfc]),
+            mock_i2c::Transaction::write(super::ADDRESS, vec![0x01, 0xfe]),
+            mock_i2c::Transaction::write(super::ADDRESS, vec![0x01, 0xfc]),
             // io0 reads
             mock_i2c::Transaction::write_read(super::ADDRESS, vec![0x00], vec![0x01]),
             mock_i2c::Transaction::write_read(super::ADDRESS, vec![0x00], vec![0x00]),
@@ -131,7 +153,7 @@ mod tests {
         let pca_pins = pca.split();
 
         let io0 = pca_pins.io0.into_output().unwrap();
-        let mut io1 = pca_pins.io1.into_output().unwrap();
+        let mut io1 = pca_pins.io1.into_output_high().unwrap();
 
         let io0 = io0.into_input().unwrap();
 

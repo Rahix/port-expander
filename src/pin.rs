@@ -41,7 +41,7 @@ where
 {
     pub fn into_input(self) -> Result<Pin<'a, crate::mode::Input, MUTEX>, PD::Error> {
         self.port_driver
-            .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Input))?;
+            .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Input, false))?;
         Ok(Pin {
             pin_mask: self.pin_mask,
             port_driver: self.port_driver,
@@ -51,7 +51,17 @@ where
 
     pub fn into_output(self) -> Result<Pin<'a, crate::mode::Output, MUTEX>, PD::Error> {
         self.port_driver
-            .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Output))?;
+            .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Output, false))?;
+        Ok(Pin {
+            pin_mask: self.pin_mask,
+            port_driver: self.port_driver,
+            _m: PhantomData,
+        })
+    }
+
+    pub fn into_output_high(self) -> Result<Pin<'a, crate::mode::Output, MUTEX>, PD::Error> {
+        self.port_driver
+            .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Output, true))?;
         Ok(Pin {
             pin_mask: self.pin_mask,
             port_driver: self.port_driver,

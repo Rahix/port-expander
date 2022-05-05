@@ -141,7 +141,22 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
 }
 
 impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
-    fn set_direction(&mut self, mask: u32, dir: crate::Direction) -> Result<(), Self::Error> {
+    fn set_direction(
+        &mut self,
+        mask: u32,
+        dir: crate::Direction,
+        state: bool,
+    ) -> Result<(), Self::Error> {
+        // set state before switching direction to prevent glitch
+        if dir == crate::Direction::Output {
+            use crate::PortDriver;
+            if state {
+                self.set(mask, 0)?;
+            } else {
+                self.set(0, mask)?;
+            }
+        }
+
         let (mask_set, mask_clear) = match dir {
             crate::Direction::Input => (mask as u16, 0),
             crate::Direction::Output => (0, mask as u16),
@@ -174,26 +189,30 @@ mod tests {
     fn pca9555() {
         let expectations = [
             // pin setup io0_0
+            mock_i2c::Transaction::write(0x22, vec![0x02, 0xfe]),
             mock_i2c::Transaction::write_read(0x22, vec![0x06], vec![0xff]),
             mock_i2c::Transaction::write(0x22, vec![0x06, 0xfe]),
             // pin setup io0_7
+            mock_i2c::Transaction::write(0x22, vec![0x02, 0x7e]),
             mock_i2c::Transaction::write_read(0x22, vec![0x06], vec![0xfe]),
             mock_i2c::Transaction::write(0x22, vec![0x06, 0x7e]),
             mock_i2c::Transaction::write_read(0x22, vec![0x06], vec![0x7e]),
             mock_i2c::Transaction::write(0x22, vec![0x06, 0xfe]),
             // pin setup io1_0
+            mock_i2c::Transaction::write(0x22, vec![0x03, 0xfe]),
             mock_i2c::Transaction::write_read(0x22, vec![0x07], vec![0xff]),
             mock_i2c::Transaction::write(0x22, vec![0x07, 0xfe]),
             // pin setup io1_7
+            mock_i2c::Transaction::write(0x22, vec![0x03, 0x7e]),
             mock_i2c::Transaction::write_read(0x22, vec![0x07], vec![0xfe]),
             mock_i2c::Transaction::write(0x22, vec![0x07, 0x7e]),
             mock_i2c::Transaction::write_read(0x22, vec![0x07], vec![0x7e]),
             mock_i2c::Transaction::write(0x22, vec![0x07, 0xfe]),
             // output io0_0, io1_0
-            mock_i2c::Transaction::write(0x22, vec![0x02, 0xff]),
-            mock_i2c::Transaction::write(0x22, vec![0x02, 0xfe]),
-            mock_i2c::Transaction::write(0x22, vec![0x03, 0xff]),
-            mock_i2c::Transaction::write(0x22, vec![0x03, 0xfe]),
+            mock_i2c::Transaction::write(0x22, vec![0x02, 0x7f]),
+            mock_i2c::Transaction::write(0x22, vec![0x02, 0x7e]),
+            mock_i2c::Transaction::write(0x22, vec![0x03, 0x7f]),
+            mock_i2c::Transaction::write(0x22, vec![0x03, 0x7e]),
             // input io0_7, io1_7
             mock_i2c::Transaction::write_read(0x22, vec![0x00], vec![0x80]),
             mock_i2c::Transaction::write_read(0x22, vec![0x00], vec![0x7f]),

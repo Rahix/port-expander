@@ -32,9 +32,14 @@ pub trait PortDriver {
 }
 
 pub trait PortDriverTotemPole: PortDriver {
-    fn set_direction(&mut self, mask: u32, dir: Direction) -> Result<(), Self::Error>;
+    /// Set the direction for all pins in `mask` to direction `dir`.
+    ///
+    /// To prevent electrical glitches, when making pins outputs, the `state` can be either `true`
+    /// or `false` to immediately put the pin HIGH or LOW upon switching.
+    fn set_direction(&mut self, mask: u32, dir: Direction, state: bool) -> Result<(), Self::Error>;
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Direction {
     Input,
     Output,
