@@ -39,7 +39,9 @@ where
     let mut mask_set_high = 0x00;
     let mut mask_set_low = 0x00;
 
-    for (pin, state) in pins.iter_mut().zip(states.iter()) {
+    let port_driver = pins[0].port_driver();
+    for (pin, state) in pins.iter().zip(states.iter()) {
+        assert!(core::ptr::eq(pin.port_driver(), port_driver));
         if *state {
             mask_set_high |= pin.pin_mask();
         } else {
@@ -99,10 +101,12 @@ where
     MUTEX: shared_bus::BusMutex<Bus = PD>,
 {
     let mask = pins.iter().map(|p| p.pin_mask()).fold(0, |m, p| m | p);
-    let mask_in = pins[0].port_driver().lock(|drv| drv.get(mask, 0))?;
+    let port_driver = pins[0].port_driver();
+    let mask_in = port_driver.lock(|drv| drv.get(mask, 0))?;
 
     let mut ret = [false; N];
     for (pin, state) in pins.iter().zip(ret.iter_mut()) {
+        assert!(core::ptr::eq(pin.port_driver(), port_driver));
         *state = mask_in & pin.pin_mask() != 0;
     }
 
@@ -192,6 +196,25 @@ mod tests {
 
         let res = super::read_multiple([&pca_pins.io1, &pca_pins.io0, &pca_pins.io3]).unwrap();
         assert_eq!(res, [true, false, true]);
+
+        bus.done();
+    }
+
+    #[test]
+    #[should_panic]
+    fn pca9538_multiple_assert_same_chip() {
+        let expectations = [
+            // single reads for multiple pins
+            mock_i2c::Transaction::write_read(0x70, vec![0x00], vec![0b00000101]),
+        ];
+        let mut bus = mock_i2c::Mock::new(&expectations);
+
+        let mut pca0 = crate::Pca9538::new(bus.clone(), false, false);
+        let pca0_pins = pca0.split();
+        let mut pca1 = crate::Pca9538::new(bus.clone(), false, true);
+        let pca1_pins = pca1.split();
+
+        let _ = super::read_multiple([&pca0_pins.io0, &pca1_pins.io1]);
 
         bus.done();
     }
