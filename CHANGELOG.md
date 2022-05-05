@@ -10,14 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added support for `PCA9538`.
 - Added `into_output_high()` for totem-pole output drivers.  In contrast to
   `into_output()` this will immediately put the pin into a HIGH state, thus
-  preventing a short glitch between setting direction and pin value.
+  preventing a short glitch between setting direction and pin value ([#3]).
 
 ### Changed
 - `into_output()` for totem-pole output drivers now puts the pin into a LOW
   state without a glitch.  Previously, it would leave the pin in whatever state
-  it was last in (= most often the HIGH state).
+  it was last in (= most often the HIGH state)  ([#3]).
 
 [#1]: https://github.com/Rahix/port-expander/pull/1
+[#3]: https://github.com/Rahix/port-expander/pull/3
 
 
 ## [0.2.1] - 2021-04-26
