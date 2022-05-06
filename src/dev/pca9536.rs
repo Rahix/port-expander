@@ -122,6 +122,18 @@ impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
     }
 }
 
+impl<I2C: crate::I2cBus> crate::PortDriverPolarity for Driver<I2C> {
+    fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error> {
+        let (mask_set, mask_clear) = match inverted {
+            false => (0, mask as u8),
+            true => (mask as u8, 0),
+        };
+
+        self.i2c
+            .update_reg(ADDRESS, Regs::PolarityInversion, mask_set, mask_clear)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use embedded_hal_mock::i2c as mock_i2c;

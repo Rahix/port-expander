@@ -181,6 +181,33 @@ impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
     }
 }
 
+impl<I2C: crate::I2cBus> crate::PortDriverPolarity for Driver<I2C> {
+    fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error> {
+        let (mask_set, mask_clear) = match inverted {
+            false => (0, mask as u16),
+            true => (mask as u16, 0),
+        };
+
+        if mask & 0x00FF != 0 {
+            self.i2c.update_reg(
+                self.addr,
+                Regs::PolarityInversion0,
+                (mask_set & 0xFF) as u8,
+                (mask_clear & 0xFF) as u8,
+            )?;
+        }
+        if mask & 0xFF00 != 0 {
+            self.i2c.update_reg(
+                self.addr,
+                Regs::PolarityInversion1,
+                (mask_set >> 8) as u8,
+                (mask_clear >> 8) as u8,
+            )?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use embedded_hal_mock::i2c as mock_i2c;
@@ -218,6 +245,15 @@ mod tests {
             mock_i2c::Transaction::write_read(0x22, vec![0x00], vec![0x7f]),
             mock_i2c::Transaction::write_read(0x22, vec![0x01], vec![0x80]),
             mock_i2c::Transaction::write_read(0x22, vec![0x01], vec![0x7f]),
+            // polarity io0_7, io1_7
+            mock_i2c::Transaction::write_read(0x22, vec![0x04], vec![0x00]),
+            mock_i2c::Transaction::write(0x22, vec![0x04, 0x80]),
+            mock_i2c::Transaction::write_read(0x22, vec![0x04], vec![0xff]),
+            mock_i2c::Transaction::write(0x22, vec![0x04, 0x7f]),
+            mock_i2c::Transaction::write_read(0x22, vec![0x05], vec![0x00]),
+            mock_i2c::Transaction::write(0x22, vec![0x05, 0x80]),
+            mock_i2c::Transaction::write_read(0x22, vec![0x05], vec![0xff]),
+            mock_i2c::Transaction::write(0x22, vec![0x05, 0x7f]),
         ];
         let mut bus = mock_i2c::Mock::new(&expectations);
 
@@ -243,6 +279,11 @@ mod tests {
         assert!(io0_7.is_low().unwrap());
         assert!(io1_7.is_high().unwrap());
         assert!(io1_7.is_low().unwrap());
+
+        let mut io0_7 = io0_7.into_inverted().unwrap();
+        io0_7.set_inverted(false).unwrap();
+        let mut io1_7 = io1_7.into_inverted().unwrap();
+        io1_7.set_inverted(false).unwrap();
 
         bus.done();
     }

@@ -134,6 +134,18 @@ impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
     }
 }
 
+impl<I2C: crate::I2cBus> crate::PortDriverPolarity for Driver<I2C> {
+    fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error> {
+        let (mask_set, mask_clear) = match inverted {
+            false => (0, mask as u8),
+            true => (mask as u8, 0),
+        };
+
+        self.i2c
+            .update_reg(self.addr, Regs::PolarityInversion, mask_set, mask_clear)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use embedded_hal_mock::i2c as mock_i2c;
@@ -158,6 +170,14 @@ mod tests {
             // io0 reads
             mock_i2c::Transaction::write_read(0x71, vec![0x00], vec![0x01]),
             mock_i2c::Transaction::write_read(0x71, vec![0x00], vec![0x00]),
+            // io4 polarity
+            mock_i2c::Transaction::write_read(0x71, vec![0x02], vec![0x00]),
+            mock_i2c::Transaction::write(0x71, vec![0x02, 0x10]),
+            // io5 polarity
+            mock_i2c::Transaction::write_read(0x71, vec![0x02], vec![0x10]),
+            mock_i2c::Transaction::write(0x71, vec![0x02, 0x30]),
+            mock_i2c::Transaction::write_read(0x71, vec![0x02], vec![0x30]),
+            mock_i2c::Transaction::write(0x71, vec![0x02, 0x10]),
         ];
         let mut bus = mock_i2c::Mock::new(&expectations);
 
@@ -175,6 +195,11 @@ mod tests {
 
         assert!(io0.is_high().unwrap());
         assert!(io0.is_low().unwrap());
+
+        pca_pins.io4.into_inverted().unwrap();
+        let mut io5 = pca_pins.io5;
+        io5.set_inverted(true).unwrap();
+        io5.set_inverted(false).unwrap();
 
         bus.done();
     }
