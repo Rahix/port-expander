@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Added `into_output_high()` for totem-pole output drivers.  In contrast to
   `into_output()` this will immediately put the pin into a HIGH state, thus
   preventing a short glitch between setting direction and pin value ([#3]).
+- Added support for setting the polarity inversion of pins.
 
 ### Changed
 - `into_output()` for totem-pole output drivers now puts the pin into a LOW
