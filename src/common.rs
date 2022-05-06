@@ -45,6 +45,11 @@ pub enum Direction {
     Output,
 }
 
+pub trait PortDriverPolarity: PortDriver {
+    /// Set the polarity of all pins in `mask` either `inverted` or not.
+    fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error>;
+}
+
 /// Pin Modes
 pub mod mode {
     /// Trait for pin-modes which can be used to set a logic level.

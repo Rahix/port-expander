@@ -81,6 +81,26 @@ where
     }
 }
 
+impl<'a, MODE, MUTEX, PD> Pin<'a, MODE, MUTEX>
+where
+    PD: crate::PortDriver + crate::PortDriverPolarity,
+    MUTEX: shared_bus::BusMutex<Bus = PD>,
+{
+    /// Turn on hardware polarity inversion for this pin.
+    pub fn into_inverted(self) -> Result<Self, PD::Error> {
+        self.port_driver
+            .lock(|drv| drv.set_polarity(self.pin_mask, true))?;
+        Ok(self)
+    }
+
+    /// Set hardware polarity inversion for this pin.
+    pub fn set_inverted(&mut self, inverted: bool) -> Result<(), PD::Error> {
+        self.port_driver
+            .lock(|drv| drv.set_polarity(self.pin_mask, inverted))?;
+        Ok(())
+    }
+}
+
 impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
