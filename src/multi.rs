@@ -29,7 +29,7 @@
 /// ).unwrap();
 /// ```
 pub fn write_multiple<PD, MUTEX, MODE: crate::mode::HasOutput, const N: usize>(
-    mut pins: [&mut crate::Pin<'_, MODE, MUTEX>; N],
+    pins: [&mut crate::Pin<'_, MODE, MUTEX>; N],
     states: [bool; N],
 ) -> Result<(), PD::Error>
 where
