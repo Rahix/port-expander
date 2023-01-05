@@ -17,4 +17,4 @@ embedded-hal = { version = "0.2.4", features = ["unproven"] }
 shared-bus = "0.2.2"
 
 [dev-dependencies]
-embedded-hal-mock = "0.7.2"
+embedded-hal-mock = "0.8.0"
