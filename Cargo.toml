@@ -10,7 +10,7 @@ categories = ["embedded", "no-std", "hardware-support"]
 
 version = "0.3.0"
 
-edition = "2018"
+edition = "2021"
 
 [dependencies]
 embedded-hal = { version = "0.2.4", features = ["unproven"] }
