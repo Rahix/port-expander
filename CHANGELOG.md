@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Added support for `MAX7321` ([#10]).
 
+### Changed
+- Upgraded to Rust Edition 2021.
+
 [#10]: https://github.com/Rahix/port-expander/pull/10
 
 
