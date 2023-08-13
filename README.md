@@ -35,6 +35,7 @@ The following list is what `port-expander` currently supports.  If you needs
 support for an additional device, it should be easy to add.  It's best to take
 a similar existing implementation as inspiration.  Contributions welcome!
 
+- [`MAX7321`](https://docs.rs/port-expander/latest/port_expander/dev/max7321/struct.Max7321.html)
 - [`PCA9536`](https://docs.rs/port-expander/latest/port_expander/dev/pca9536/struct.Pca9536.html)
 - [`PCA9538`](https://docs.rs/port-expander/latest/port_expander/dev/pca9538/struct.Pca9538.html)
 - [`PCA9555`](https://docs.rs/port-expander/latest/port_expander/dev/pca9555/struct.Pca9555.html)

@@ -30,6 +30,7 @@
 //! additional device, it should be easy to add.  It's best to take a similar existing
 //! implementation as inspiration.  Contributions welcome!
 //!
+//! - [`MAX7321`](Max7321)
 //! - [`PCA9536`](Pca9536)
 //! - [`PCA9538`](Pca9538)
 //! - [`PCA9555`](Pca9555)
@@ -73,6 +74,7 @@ pub(crate) use common::PortDriver;
 pub(crate) use common::PortDriverPolarity;
 pub(crate) use common::PortDriverTotemPole;
 
+pub use dev::max7321::Max7321;
 pub use dev::pca9536::Pca9536;
 pub use dev::pca9538::Pca9538;
 pub use dev::pca9555::Pca9555;
