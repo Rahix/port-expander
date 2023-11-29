@@ -74,7 +74,7 @@ pub struct Driver<I2C> {
 
 impl<I2C> Driver<I2C> {
     pub fn new(i2c: I2C, a0: bool) -> Self {
-        let addr = 0x20 |(a0 as u8);
+        let addr = 0x20 | (a0 as u8);
         Self {
             i2c,
             addr,
