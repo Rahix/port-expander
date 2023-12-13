@@ -80,6 +80,7 @@ pub use dev::pca9536::Pca9536;
 pub use dev::pca9538::Pca9538;
 pub use dev::pca9555::Pca9555;
 pub use dev::pcal6408a::Pcal6408a;
+pub use dev::pcal6416a::Pcal6416a;
 pub use dev::pcf8574::Pcf8574;
 pub use dev::pcf8574::Pcf8574a;
 pub use dev::pcf8575::Pcf8575;
