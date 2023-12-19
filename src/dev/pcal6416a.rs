@@ -78,6 +78,21 @@ enum Regs {
     PolarityInversion1 = 0x05,
     Configuration0 = 0x06,
     Configuration1 = 0x07,
+    OutputDriveStrength0Port0 = 0x40,
+    OutputDriveStrength1Port0 = 0x41,
+    OutputDriveStrength0Port1 = 0x42,
+    OutputDriveStrength1Port1 = 0x43,
+    InputLatch0 = 0x44,
+    InputLatch1 = 0x45,
+    PullEnable0 = 0x46,
+    PullEnable1 = 0x47,
+    PullSelection0 = 0x48,
+    PullSelection1 = 0x49,
+    InterruptMask0 = 0x4A,
+    InterruptMask1 = 0x4B,
+    InterruptStatus0 = 0x4C,
+    InterruptStatus1 = 0x4D,
+    OutputPortConfiguration = 0x4F, // Bit 0: Push-Pull (0) or Open-Drain (1) for all Outputs
 }
 
 impl From<Regs> for u8 {
@@ -88,7 +103,7 @@ impl From<Regs> for u8 {
 
 pub struct Driver<I2C> {
     i2c: I2C,
-    out: u16,
+    out: Option<u16>,
     addr: u8,
 }
 
@@ -97,8 +112,25 @@ impl<I2C> Driver<I2C> {
         let addr = 0x20 | (addr as u8);
         Self {
             i2c,
-            out: 0xffff,
+            out: None,
             addr,
+        }
+    }
+}
+
+impl<I2C: crate::I2cBus> Driver<I2C> {
+    fn get_out(&mut self) -> Result<u16, I2C::BusError> {
+        // Make sure the state of the OutputPort register is actually known instead of assumed to avoid glitches on reboot.
+        // This is necessary because the OutputPort register is written instead of updated.
+        match self.out {
+            Some(out) => Ok(out),
+            None => {
+                let out_low = self.i2c.read_reg(self.addr, Regs::OutputPort0)? as u16;
+                let out_high = self.i2c.read_reg(self.addr, Regs::OutputPort1)? as u16;
+                let out = out_low | (out_high << 8);
+                self.out = Some(out);
+                Ok(out)
+            }
         }
     }
 }
@@ -107,21 +139,24 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     type Error = I2C::BusError;
 
     fn set(&mut self, mask_high: u32, mask_low: u32) -> Result<(), Self::Error> {
-        self.out |= mask_high as u16;
-        self.out &= !mask_low as u16;
+        let mut out = self.get_out()?;
+        out |= mask_high as u16;
+        out &= !mask_low as u16;
+        self.out = Some(out);
         if (mask_high | mask_low) & 0x00FF != 0 {
             self.i2c
-                .write_reg(self.addr, Regs::OutputPort0, (self.out & 0xFF) as u8)?;
+                .write_reg(self.addr, Regs::OutputPort0, (out & 0xFF) as u8)?;
         }
         if (mask_high | mask_low) & 0xFF00 != 0 {
             self.i2c
-                .write_reg(self.addr, Regs::OutputPort1, (self.out >> 8) as u8)?;
+                .write_reg(self.addr, Regs::OutputPort1, (out >> 8) as u8)?;
         }
         Ok(())
     }
 
     fn is_set(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
-        Ok(((self.out as u32) & mask_high) | (!(self.out as u32) & mask_low))
+        let out = self.get_out()?;
+        Ok(((out as u32) & mask_high) | (!(out as u32) & mask_low))
     }
 
     fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
