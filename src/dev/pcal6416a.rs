@@ -251,6 +251,8 @@ mod tests {
     fn pca6416a() {
         let expectations = [
             // pin setup io0_0
+            mock_i2c::Transaction::write_read(0x21, vec![0x02], vec![0xff]),
+            mock_i2c::Transaction::write_read(0x21, vec![0x03], vec![0xff]),
             mock_i2c::Transaction::write(0x21, vec![0x02, 0xfe]),
             mock_i2c::Transaction::write_read(0x21, vec![0x06], vec![0xff]),
             mock_i2c::Transaction::write(0x21, vec![0x06, 0xfe]),

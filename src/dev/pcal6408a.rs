@@ -190,23 +190,24 @@ mod tests {
     #[test]
     fn pca6408a() {
         let expectations = [
-            // pin setup io0_0
+            // pin setup io0
+            mock_i2c::Transaction::write_read(0x21, vec![0x01], vec![0xff]),
             mock_i2c::Transaction::write(0x21, vec![0x01, 0xfe]),
             mock_i2c::Transaction::write_read(0x21, vec![0x03], vec![0xff]),
             mock_i2c::Transaction::write(0x21, vec![0x03, 0xfe]),
-            // pin setup io0_7
+            // pin setup io7
             mock_i2c::Transaction::write(0x21, vec![0x01, 0x7e]),
             mock_i2c::Transaction::write_read(0x21, vec![0x03], vec![0xfe]),
             mock_i2c::Transaction::write(0x21, vec![0x03, 0x7e]),
             mock_i2c::Transaction::write_read(0x21, vec![0x03], vec![0x7e]),
             mock_i2c::Transaction::write(0x21, vec![0x03, 0xfe]),
-            // output io0_0
+            // output io0
             mock_i2c::Transaction::write(0x21, vec![0x01, 0x7f]),
             mock_i2c::Transaction::write(0x21, vec![0x01, 0x7e]),
-            // input io0_7
+            // input io7
             mock_i2c::Transaction::write_read(0x21, vec![0x00], vec![0x80]),
             mock_i2c::Transaction::write_read(0x21, vec![0x00], vec![0x7f]),
-            // polarity io0_7
+            // polarity io7
             mock_i2c::Transaction::write_read(0x21, vec![0x02], vec![0x00]),
             mock_i2c::Transaction::write(0x21, vec![0x02, 0x80]),
             mock_i2c::Transaction::write_read(0x21, vec![0x02], vec![0xff]),
@@ -217,20 +218,20 @@ mod tests {
         let mut pcal = super::Pcal6408a::new(bus.clone(), true);
         let pcal_pins = pcal.split();
 
-        let mut io0_0 = pcal_pins.io0_0.into_output().unwrap();
-        let io0_7 = pcal_pins.io0_7.into_output().unwrap();
-        let io0_7 = io0_7.into_input().unwrap();
+        let mut io0 = pcal_pins.io0.into_output().unwrap();
+        let io7 = pcal_pins.io7.into_output().unwrap();
+        let io7 = io7.into_input().unwrap();
 
         // output high and low
-        io0_0.set_high().unwrap();
-        io0_0.set_low().unwrap();
+        io0.set_high().unwrap();
+        io0.set_low().unwrap();
 
         // input high and low
-        assert!(io0_7.is_high().unwrap());
-        assert!(io0_7.is_low().unwrap());
+        assert!(io7.is_high().unwrap());
+        assert!(io7.is_low().unwrap());
 
-        let mut io0_7 = io0_7.into_inverted().unwrap();
-        io0_7.set_inverted(false).unwrap();
+        let mut io7 = io7.into_inverted().unwrap();
+        io7.set_inverted(false).unwrap();
 
         bus.done();
     }
