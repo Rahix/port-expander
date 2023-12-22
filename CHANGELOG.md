@@ -6,9 +6,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Added support for the `TCA6408A` ([#12]).
+- Added support for `TCA6408A` ([#12]).
+- Added support for `PCAL6408A` and `PCAL6416A` ([#13]).
 
 [#12]: https://github.com/Rahix/port-expander/pull/12
+[#13]: https://github.com/Rahix/port-expander/pull/13
 
 
 ## [0.4.0] - 2023-08-13
