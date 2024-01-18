@@ -3,7 +3,7 @@
 /// The usual method of setting multiple pins
 ///
 /// ```no_run
-/// # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+/// # let i2c = embedded_hal_mock::eh1::i2c::Mock::new(&[]);
 /// # let mut pcf = port_expander::Pcf8574::new(i2c, false, false, false);
 /// # let p = pcf.split();
 /// # let mut io0 = p.p0;
@@ -18,7 +18,7 @@
 ///
 /// ## Example
 /// ```no_run
-/// # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+/// # let i2c = embedded_hal_mock::eh1::i2c::Mock::new(&[]);
 /// # let mut pcf = port_expander::Pcf8574::new(i2c, false, false, false);
 /// # let p = pcf.split();
 /// # let mut io0 = p.p0;
@@ -62,7 +62,7 @@ where
 /// inputs at once.  The naive approach of checking the pins in order
 ///
 /// ```no_run
-/// # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+/// # let i2c = embedded_hal_mock::eh1::i2c::Mock::new(&[]);
 /// # let mut pcf = port_expander::Pcf8574::new(i2c, false, false, false);
 /// # let p = pcf.split();
 /// # let io0 = p.p0;
@@ -81,7 +81,7 @@ where
 ///
 /// ## Example
 /// ```no_run
-/// # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+/// # let i2c = embedded_hal_mock::eh1::i2c::Mock::new(&[]);
 /// # let mut pcf = port_expander::Pcf8574::new(i2c, false, false, false);
 /// # let p = pcf.split();
 /// # let io0 = p.p0;
@@ -115,7 +115,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use embedded_hal_mock::i2c as mock_i2c;
+    use embedded_hal_mock::eh1::i2c as mock_i2c;
 
     #[test]
     fn pcf8574_write_multiple() {

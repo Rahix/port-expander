@@ -7,7 +7,7 @@
 //! ```no_run
 //! // Initialize I2C peripheral from HAL
 //! let i2c = todo!();
-//! # let i2c = embedded_hal_mock::i2c::Mock::new(&[]);
+//! # let i2c = embedded_hal_mock::eh1::i2c::Mock::new(&[]);
 //!
 //! // A0: HIGH, A1: LOW, A2: LOW
 //! let mut pca9555 = port_expander::Pca9555::new(i2c, true, false, false);

@@ -22,7 +22,7 @@ where
         Self(shared_bus::BusMutex::create(Driver::new(i2c, addr)))
     }
 
-    pub fn split<'a>(&'a mut self) -> Parts<'a, I2C, M> {
+    pub fn split(&mut self) -> Parts<'_, I2C, M> {
         Parts {
             io0: crate::Pin::new(0, &self.0),
             io1: crate::Pin::new(1, &self.0),
@@ -115,8 +115,7 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
         out &= !mask_low as u8;
         self.out = Some(out);
         if (mask_high | mask_low) & 0x00FF != 0 {
-            self.i2c
-                .write_reg(self.addr, Regs::OutputPort, (out & 0xFF) as u8)?;
+            self.i2c.write_reg(self.addr, Regs::OutputPort, out)?;
         }
         Ok(())
     }
@@ -185,7 +184,7 @@ impl<I2C: crate::I2cBus> crate::PortDriverPolarity for Driver<I2C> {
 
 #[cfg(test)]
 mod tests {
-    use embedded_hal_mock::i2c as mock_i2c;
+    use embedded_hal_mock::eh1::i2c as mock_i2c;
 
     #[test]
     fn pca6408a() {

@@ -21,7 +21,7 @@ where
         Self(shared_bus::BusMutex::create(Driver::new(i2c, a0, a1, a2)))
     }
 
-    pub fn split<'a>(&'a mut self) -> Parts<'a, I2C, M> {
+    pub fn split(&mut self) -> Parts<'_, I2C, M> {
         Parts {
             p00: crate::Pin::new(0, &self.0),
             p01: crate::Pin::new(1, &self.0),
@@ -113,7 +113,7 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
 
 #[cfg(test)]
 mod tests {
-    use embedded_hal_mock::i2c as mock_i2c;
+    use embedded_hal_mock::eh1::i2c as mock_i2c;
 
     #[test]
     fn pcf8575() {
