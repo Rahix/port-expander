@@ -1,15 +1,13 @@
-use embedded_hal::blocking::i2c as hal_i2c;
+use embedded_hal::i2c as hal_i2c;
 
-/// Blanket trait for types implementing `i2c::WriteRead + i2c::Write + i2c::Read`
-pub trait I2cBus: hal_i2c::WriteRead + hal_i2c::Write + hal_i2c::Read {
-    type BusError: From<<Self as hal_i2c::WriteRead>::Error>
-        + From<<Self as hal_i2c::Write>::Error>
-        + From<<Self as hal_i2c::Read>::Error>;
+/// Blanket trait for types implementing `i2c::I2c
+pub trait I2cBus: hal_i2c::I2c {
+    type BusError: From<<Self as hal_i2c::ErrorType>::Error>;
 }
 
 impl<T, E> I2cBus for T
 where
-    T: hal_i2c::WriteRead<Error = E> + hal_i2c::Write<Error = E> + hal_i2c::Read<Error = E>,
+    T: hal_i2c::I2c<Error = E>,
 {
     type BusError = E;
 }
