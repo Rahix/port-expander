@@ -50,6 +50,16 @@ pub trait PortDriverPolarity: PortDriver {
     fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error>;
 }
 
+pub trait PortDriverPullDown: PortDriver {
+    /// Enable pull-downs for pins in mask or set the pin to floating if enable is false.
+    fn set_pull_down(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error>;
+}
+
+pub trait PortDriverPullUp: PortDriver {
+    /// Enable pull-ups for pins in mask or set the pin to floating if enable is false.
+    fn set_pull_up(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error>;
+}
+
 /// Pin Modes
 pub mod mode {
     /// Trait for pin-modes which can be used to set a logic level.

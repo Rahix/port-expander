@@ -195,6 +195,36 @@ impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
     }
 }
 
+impl<I2C: crate::I2cBus> crate::PortDriverPullDown for Driver<I2C> {
+    fn set_pull_down(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error> {
+        if enable {
+            self.i2c
+                .update_reg(self.addr, Regs::PullUpPullDownSelection, 0, mask as u8)?;
+            self.i2c
+                .update_reg(self.addr, Regs::PullUpPullDownEnable, mask as u8, 0)?;
+        } else {
+            self.i2c
+                .update_reg(self.addr, Regs::PullUpPullDownEnable, 0, mask as u8)?;
+        }
+        Ok(())
+    }
+}
+
+impl<I2C: crate::I2cBus> crate::PortDriverPullUp for Driver<I2C> {
+    fn set_pull_up(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error> {
+        if enable {
+            self.i2c
+                .update_reg(self.addr, Regs::PullUpPullDownSelection, mask as u8, 0)?;
+            self.i2c
+                .update_reg(self.addr, Regs::PullUpPullDownEnable, mask as u8, 0)?;
+        } else {
+            self.i2c
+                .update_reg(self.addr, Regs::PullUpPullDownEnable, 0, mask as u8)?;
+        }
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use core::cell::RefCell;
@@ -225,6 +255,22 @@ mod tests {
             // io0 reads
             mock_i2c::Transaction::write_read(0x43, vec![0x0f], vec![0b00000001]),
             mock_i2c::Transaction::write_read(0x43, vec![0x0f], vec![0b00000000]),
+            // io0 activate pull-up
+            mock_i2c::Transaction::write_read(0x43, vec![0x0d], vec![0b10101010]),
+            mock_i2c::Transaction::write(0x43, vec![0x0d, 0b10101011]),
+            mock_i2c::Transaction::write_read(0x43, vec![0x0b], vec![0b00001010]),
+            mock_i2c::Transaction::write(0x43, vec![0x0b, 0b00001011]),
+            // io0 disable pull-up
+            mock_i2c::Transaction::write_read(0x43, vec![0x0b], vec![0b00001011]),
+            mock_i2c::Transaction::write(0x43, vec![0x0b, 0b00001010]),
+            // io0 activate pull-down
+            mock_i2c::Transaction::write_read(0x43, vec![0x0d], vec![0b10101011]),
+            mock_i2c::Transaction::write(0x43, vec![0x0d, 0b10101010]),
+            mock_i2c::Transaction::write_read(0x43, vec![0x0b], vec![0b00001010]),
+            mock_i2c::Transaction::write(0x43, vec![0x0b, 0b00001011]),
+            // io0 disable pull-down
+            mock_i2c::Transaction::write_read(0x43, vec![0x0b], vec![0b00001011]),
+            mock_i2c::Transaction::write(0x43, vec![0x0b, 0b00001010]),
         ];
         let mut bus = mock_i2c::Mock::new(&expectations);
 
@@ -234,7 +280,7 @@ mod tests {
         let io0 = pca_pins.io0.into_output().unwrap();
         let mut io1 = pca_pins.io1.into_output_high().unwrap();
 
-        let io0 = io0.into_input().unwrap();
+        let mut io0 = io0.into_input().unwrap();
 
         io1.set_low().unwrap();
         io1.set_high().unwrap();
@@ -242,6 +288,11 @@ mod tests {
 
         assert!(io0.is_high().unwrap());
         assert!(io0.is_low().unwrap());
+
+        io0.enable_pull_up(true).unwrap();
+        io0.enable_pull_up(false).unwrap();
+        io0.enable_pull_down(true).unwrap();
+        io0.enable_pull_down(false).unwrap();
 
         bus.done();
     }

@@ -75,6 +75,8 @@ pub(crate) use bus::I2cExt;
 pub(crate) use common::Direction;
 pub(crate) use common::PortDriver;
 pub(crate) use common::PortDriverPolarity;
+pub(crate) use common::PortDriverPullDown;
+pub(crate) use common::PortDriverPullUp;
 pub(crate) use common::PortDriverTotemPole;
 
 pub use dev::max7321::Max7321;
