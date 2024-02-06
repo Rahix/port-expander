@@ -133,6 +133,34 @@ where
     }
 }
 
+impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> Pin<'a, MODE, MUTEX>
+where
+    PD: crate::PortDriver + crate::PortDriverPullUp,
+    MUTEX: crate::PortMutex<Port = PD>,
+{
+    /// Enable/Disable pull-up resistors for this pin.
+    ///
+    /// If `enable` is `true`, the pull-up resistor is enabled, otherwise the pin is configured as floating input.
+    pub fn enable_pull_up(&mut self, enable: bool) -> Result<(), PD::Error> {
+        self.port_driver
+            .lock(|drv| drv.set_pull_up(self.pin_mask, enable))
+    }
+}
+
+impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> Pin<'a, MODE, MUTEX>
+where
+    PD: crate::PortDriver + crate::PortDriverPullDown,
+    MUTEX: crate::PortMutex<Port = PD>,
+{
+    /// Enable/Disable pull-down resistors for this pin.
+    ///
+    /// If `enable` is `true`, the pull-down resistor is enabled, otherwise the pin is configured as floating input.
+    pub fn enable_pull_down(&mut self, enable: bool) -> Result<(), PD::Error> {
+        self.port_driver
+            .lock(|drv| drv.set_pull_down(self.pin_mask, enable))
+    }
+}
+
 impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> hal_digital::InputPin for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
