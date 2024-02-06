@@ -11,4 +11,5 @@ pub mod pcal6408a;
 pub mod pcal6416a;
 pub mod pcf8574;
 pub mod pcf8575;
+pub mod pi4ioe5v6408;
 pub mod tca6408a;
