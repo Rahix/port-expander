@@ -25,12 +25,19 @@ where
         }
     }
 
-    pub(crate) fn pin_mask(&self) -> u32 {
+    pub fn pin_mask(&self) -> u32 {
         self.pin_mask
     }
 
     pub(crate) fn port_driver(&self) -> &MUTEX {
         self.port_driver
+    }
+
+    pub fn access_port_driver<F, R>(&self, f: F) -> R
+    where
+        F: FnOnce(&mut PD) -> R,
+    {
+        self.port_driver.lock(|pd| f(pd))
     }
 }
 impl<'a, MODE, MUTEX, PD> ErrorType for Pin<'a, MODE, MUTEX>
