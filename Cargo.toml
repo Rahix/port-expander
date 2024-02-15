@@ -12,6 +12,9 @@ version = "0.4.1"
 
 edition = "2021"
 
+[features]
+std = []
+
 [dependencies]
 embedded-hal = { version = "1.0.0" }
 shared-bus = "0.3.0"

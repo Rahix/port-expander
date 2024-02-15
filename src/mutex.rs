@@ -8,6 +8,9 @@
 /// | Mutex | Feature Name | Notes |
 /// | --- | --- | --- |
 /// | [`core::cell::RefCell`] | _always available_ | For sharing within a single execution context. |
+/// | [`std::sync::Mutex`][mutex-std] | `std` | For platforms where `std` is available. |
+///
+/// [mutex-std]: https://doc.rust-lang.org/std/sync/struct.Mutex.html
 ///
 /// For other mutex types, a custom implementation is needed.  Due to the orphan rule, it might be
 /// necessary to wrap it in a newtype.  As an example, this is what such a custom implementation
@@ -49,6 +52,20 @@ impl<T> PortMutex for core::cell::RefCell<T> {
 
     fn lock<R, F: FnOnce(&mut Self::Port) -> R>(&self, f: F) -> R {
         let mut v = self.borrow_mut();
+        f(&mut v)
+    }
+}
+
+#[cfg(any(test, feature = "std"))]
+impl<T> PortMutex for std::sync::Mutex<T> {
+    type Port = T;
+
+    fn create(v: Self::Port) -> Self {
+        std::sync::Mutex::new(v)
+    }
+
+    fn lock<R, F: FnOnce(&mut Self::Port) -> R>(&self, f: F) -> R {
+        let mut v = self.lock().unwrap();
         f(&mut v)
     }
 }
