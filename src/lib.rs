@@ -61,12 +61,14 @@ mod bus;
 mod common;
 pub mod dev;
 mod multi;
+mod mutex;
 mod pin;
 
 pub use bus::I2cBus;
 pub use common::mode;
 pub use multi::read_multiple;
 pub use multi::write_multiple;
+pub use mutex::PortMutex;
 pub use pin::Pin;
 
 pub(crate) use bus::I2cExt;
