@@ -9,8 +9,11 @@
 /// | --- | --- | --- |
 /// | [`core::cell::RefCell`] | _always available_ | For sharing within a single execution context. |
 /// | [`std::sync::Mutex`][mutex-std] | `std` | For platforms where `std` is available. |
+/// | [`critical_section::Mutex`][mutex-cs] | `critical-section` | Use critical sections to ensure synchronized access, via the [`critical-section`][crate-critical-section] crate. |
 ///
 /// [mutex-std]: https://doc.rust-lang.org/std/sync/struct.Mutex.html
+/// [mutex-cs]: https://docs.rs/critical-section/latest/critical_section/struct.Mutex.html
+/// [crate-critical-section]: https://crates.io/crates/critical-section
 ///
 /// For other mutex types, a custom implementation is needed.  Due to the orphan rule, it might be
 /// necessary to wrap it in a newtype.  As an example, this is what such a custom implementation
@@ -67,5 +70,21 @@ impl<T> PortMutex for std::sync::Mutex<T> {
     fn lock<R, F: FnOnce(&mut Self::Port) -> R>(&self, f: F) -> R {
         let mut v = self.lock().unwrap();
         f(&mut v)
+    }
+}
+
+#[cfg(feature = "critical-section")]
+impl<T> PortMutex for critical_section::Mutex<core::cell::RefCell<T>> {
+    type Port = T;
+
+    fn create(v: Self::Port) -> Self {
+        critical_section::Mutex::new(core::cell::RefCell::new(v))
+    }
+
+    fn lock<R, F: FnOnce(&mut Self::Port) -> R>(&self, f: F) -> R {
+        critical_section::with(|cs| {
+            let mut v = self.borrow_ref_mut(cs);
+            f(&mut v)
+        })
     }
 }
