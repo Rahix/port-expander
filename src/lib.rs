@@ -40,8 +40,8 @@
 //! - [`TCA6408A`](Tca6408a)
 //!
 //! ## Non-local sharing
-//! `port-expander` uses the `BusMutex` from [`shared-bus`](https://crates.io/crates/shared-bus)
-//! under the hood.  This means you can also make the pins shareable across task/thread boundaries,
+//! `port-expander` uses a custom trait for abstracting different kinds of mutexes:
+//! [`PortMutex`]. This means you can also make the pins shareable across task/thread boundaries,
 //! given that you provide an appropriate mutex type:
 //!
 //! ```ignore

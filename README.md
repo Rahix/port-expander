@@ -46,10 +46,10 @@ a similar existing implementation as inspiration.  Contributions welcome!
 - [`PI4IOE5V6408`](https://docs.rs/port-expander/latest/port_expander/dev/pi4ioe5v6408/struct.Pi4ioe5v6408.html)
 
 ## Non-local sharing
-`port-expander` uses the `BusMutex` from
-[`shared-bus`](https://crates.io/crates/shared-bus) under the hood.  This means
-you can also make the pins shareable across task/thread boundaries, given that
-you provide an appropriate mutex type:
+`port-expander` uses a custom trait for abstracting different kinds of mutexes:
+[`PortMutex`](https://docs.rs/port-expander/latest/port_expander/trait.PortMutex.html).
+This means you can also make the pins shareable across task/thread boundaries,
+given that you provide an appropriate mutex type:
 
 ```rust
 // Initialize I2C peripheral from HAL
