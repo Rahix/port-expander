@@ -5,10 +5,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Support for `PI4IOE5V6408` ([#17]).
+
 ### Changed
 - **BREAKING** Moved to `embedded-hal` 1.0 ([#16]).
 
 [#16]: https://github.com/Rahix/port-expander/pull/16
+[#17]: https://github.com/Rahix/port-expander/pull/17
 
 
 ## [0.4.1] - 2023-12-25
