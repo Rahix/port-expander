@@ -4,7 +4,7 @@ use crate::I2cExt;
 /// `PI4IOE5V6408` "Low-voltage Translating 8-bit I2C-bus I/O Expander"
 pub struct Pi4ioe5v6408<M>(M);
 
-impl<I2C> Pi4ioe5v6408<shared_bus::NullMutex<Driver<I2C>>>
+impl<I2C> Pi4ioe5v6408<core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
 {
@@ -22,7 +22,7 @@ where
 impl<I2C, M> Pi4ioe5v6408<M>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     /// Create a new driver for the `PI4IOE5V6408` "Low-voltage Translating 8-bit I2C-bus I/O Expander"
     /// with a mutex.
@@ -32,7 +32,7 @@ where
     /// - `i2c` - The I2C bus the device is connected to
     /// - `addr` - The address of the device. The address is 0x43 if `addr` is `false` and 0x44 if `addr` is `true`
     pub fn with_mutex(i2c: I2C, addr: bool) -> Result<Self, I2C::BusError> {
-        Ok(Self(shared_bus::BusMutex::create(Driver::new(
+        Ok(Self(crate::PortMutex::create(Driver::new(
             i2c, addr, false,
         )?)))
     }
@@ -46,7 +46,7 @@ where
     /// - `i2c` - The I2C bus the device is connected to
     /// - `addr` - The address of the device. The address is 0x43 if `addr` is `false` and 0x44 if `addr` is `true`
     pub fn with_retained_pin_config(i2c: I2C, addr: bool) -> Result<Self, I2C::BusError> {
-        Ok(Self(shared_bus::BusMutex::create(Driver::new(
+        Ok(Self(crate::PortMutex::create(Driver::new(
             i2c, addr, true,
         )?)))
     }
@@ -65,10 +65,10 @@ where
     }
 }
 
-pub struct Parts<'a, I2C, M = shared_bus::NullMutex<Driver<I2C>>>
+pub struct Parts<'a, I2C, M = core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub io0: crate::Pin<'a, crate::mode::Input, M>,
     pub io1: crate::Pin<'a, crate::mode::Input, M>,
@@ -197,8 +197,8 @@ impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
 
 #[cfg(test)]
 mod tests {
+    use core::cell::RefCell;
     use embedded_hal_mock::eh1::i2c as mock_i2c;
-    use shared_bus::NullMutex;
 
     #[test]
     fn pi4ioe5v6408() {
@@ -266,7 +266,7 @@ mod tests {
         ];
         let mut bus = mock_i2c::Mock::new(&expectations);
 
-        let mut pca: super::Pi4ioe5v6408<NullMutex<_>> =
+        let mut pca: super::Pi4ioe5v6408<RefCell<_>> =
             super::Pi4ioe5v6408::with_retained_pin_config(bus.clone(), true).unwrap();
         let pca_pins = pca.split();
 

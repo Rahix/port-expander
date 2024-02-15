@@ -3,7 +3,7 @@
 /// `PCF8575` "Remote 16-bit I/O expander for I2C-bus with interrupt"
 pub struct Pcf8575<M>(M);
 
-impl<I2C> Pcf8575<shared_bus::NullMutex<Driver<I2C>>>
+impl<I2C> Pcf8575<core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
 {
@@ -15,10 +15,10 @@ where
 impl<I2C, M> Pcf8575<M>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C, a0: bool, a1: bool, a2: bool) -> Self {
-        Self(shared_bus::BusMutex::create(Driver::new(i2c, a0, a1, a2)))
+        Self(crate::PortMutex::create(Driver::new(i2c, a0, a1, a2)))
     }
 
     pub fn split(&mut self) -> Parts<'_, I2C, M> {
@@ -43,10 +43,10 @@ where
     }
 }
 
-pub struct Parts<'a, I2C, M = shared_bus::NullMutex<Driver<I2C>>>
+pub struct Parts<'a, I2C, M = core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub p00: crate::Pin<'a, crate::mode::QuasiBidirectional, M>,
     pub p01: crate::Pin<'a, crate::mode::QuasiBidirectional, M>,

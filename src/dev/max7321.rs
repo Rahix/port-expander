@@ -2,7 +2,7 @@
 pub struct Max7321<M>(M);
 
 /// MAX7321 "I2C Port Expander with 8 Open-Drain I/Os"
-impl<I2C> Max7321<shared_bus::NullMutex<Driver<I2C>>>
+impl<I2C> Max7321<core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
 {
@@ -14,12 +14,10 @@ where
 impl<I2C, M> Max7321<M>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C, a3: bool, a2: bool, a1: bool, a0: bool) -> Self {
-        Self(shared_bus::BusMutex::create(Driver::new(
-            i2c, a3, a2, a1, a0,
-        )))
+        Self(crate::PortMutex::create(Driver::new(i2c, a3, a2, a1, a0)))
     }
 
     pub fn split(&mut self) -> Parts<'_, I2C, M> {
@@ -36,10 +34,10 @@ where
     }
 }
 
-pub struct Parts<'a, I2C, M = shared_bus::NullMutex<Driver<I2C>>>
+pub struct Parts<'a, I2C, M = core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub p0: crate::Pin<'a, crate::mode::QuasiBidirectional, M>,
     pub p1: crate::Pin<'a, crate::mode::QuasiBidirectional, M>,

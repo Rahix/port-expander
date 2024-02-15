@@ -34,7 +34,7 @@ pub fn write_multiple<PD, MUTEX, MODE: crate::mode::HasOutput, const N: usize>(
 ) -> Result<(), PD::Error>
 where
     PD: crate::PortDriver,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     let mut mask_set_high = 0x00;
     let mut mask_set_low = 0x00;
@@ -98,7 +98,7 @@ pub fn read_multiple<PD, MUTEX, MODE: crate::mode::HasInput, const N: usize>(
 ) -> Result<[bool; N], PD::Error>
 where
     PD: crate::PortDriver,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     let mask = pins.iter().map(|p| p.pin_mask()).fold(0, |m, p| m | p);
     let port_driver = pins[0].port_driver();
