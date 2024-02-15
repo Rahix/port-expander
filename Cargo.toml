@@ -5,7 +5,7 @@ authors = ["Rahix <rahix@rahix.de>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/rahix/port-expander"
 readme = "README.md"
-keywords = ["i2c", "shared-bus", "pca", "pcf", "gpio"]
+keywords = ["i2c", "gpio-expander", "gpio", "pca", "pcf"]
 categories = ["embedded", "no-std", "hardware-support"]
 
 version = "0.4.1"
