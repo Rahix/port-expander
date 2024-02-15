@@ -4,7 +4,7 @@ use crate::I2cExt;
 /// `TCA6408A` "Remote 8-Bit I2C AND SMBus Low-power I/O Expander"
 pub struct Tca6408a<M>(M);
 
-impl<I2C> Tca6408a<shared_bus::NullMutex<Driver<I2C>>>
+impl<I2C> Tca6408a<core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
 {
@@ -16,10 +16,10 @@ where
 impl<I2C, M> Tca6408a<M>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C, a0: bool) -> Self {
-        Self(shared_bus::BusMutex::create(Driver::new(i2c, a0)))
+        Self(crate::PortMutex::create(Driver::new(i2c, a0)))
     }
 
     pub fn split(&mut self) -> Parts<'_, I2C, M> {
@@ -36,10 +36,10 @@ where
     }
 }
 
-pub struct Parts<'a, I2C, M = shared_bus::NullMutex<Driver<I2C>>>
+pub struct Parts<'a, I2C, M = core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub io0: crate::Pin<'a, crate::mode::Input, M>,
     pub io1: crate::Pin<'a, crate::mode::Input, M>,

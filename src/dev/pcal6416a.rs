@@ -4,7 +4,7 @@ use crate::I2cExt;
 /// `PCAL6416A` "16-bit I2C-bus and SMBus I/O port with interrupt"
 pub struct Pcal6416a<M>(M);
 
-impl<I2C> Pcal6416a<shared_bus::NullMutex<Driver<I2C>>>
+impl<I2C> Pcal6416a<core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
 {
@@ -16,10 +16,10 @@ where
 impl<I2C, M> Pcal6416a<M>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C, addr: bool) -> Self {
-        Self(shared_bus::BusMutex::create(Driver::new(i2c, addr)))
+        Self(crate::PortMutex::create(Driver::new(i2c, addr)))
     }
 
     pub fn split(&mut self) -> Parts<'_, I2C, M> {
@@ -44,10 +44,10 @@ where
     }
 }
 
-pub struct Parts<'a, I2C, M = shared_bus::NullMutex<Driver<I2C>>>
+pub struct Parts<'a, I2C, M = core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub io0_0: crate::Pin<'a, crate::mode::Input, M>,
     pub io0_1: crate::Pin<'a, crate::mode::Input, M>,

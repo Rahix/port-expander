@@ -14,7 +14,7 @@ pub struct Pin<'a, MODE, MUTEX> {
 impl<'a, MODE, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     pub(crate) fn new(pin_number: u8, port_driver: &'a MUTEX) -> Self {
         assert!(pin_number < 32);
@@ -37,14 +37,14 @@ impl<'a, MODE, MUTEX, PD> ErrorType for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
     PD::Error: embedded_hal::digital::Error,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     type Error = PD::Error;
 }
 impl<'a, MODE, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     /// Configure this pin as an input.
     ///
@@ -91,7 +91,7 @@ where
 impl<'a, MODE, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverPolarity,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     /// Turn on hardware polarity inversion for this pin.
     pub fn into_inverted(self) -> Result<Self, PD::Error> {
@@ -111,7 +111,7 @@ where
 impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     /// Read the pin's input state and return `true` if it is HIGH.
     pub fn is_high(&self) -> Result<bool, PD::Error> {
@@ -130,7 +130,7 @@ impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> hal_digital::InputPin for Pin<'
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
     <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     fn is_high(&mut self) -> Result<bool, <PD as crate::PortDriver>::Error> {
         Pin::is_high(self)
@@ -144,7 +144,7 @@ where
 impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     /// Set the pin's output state to HIGH.
     ///
@@ -186,7 +186,7 @@ impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::OutputPin for Pin
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
     <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     fn set_low(&mut self) -> Result<(), Self::Error> {
         Pin::set_low(self)
@@ -202,7 +202,7 @@ impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::StatefulOutputPin
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
     <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
-    MUTEX: shared_bus::BusMutex<Bus = PD>,
+    MUTEX: crate::PortMutex<Port = PD>,
 {
     fn is_set_high(&mut self) -> Result<bool, Self::Error> {
         Pin::is_set_high(self)

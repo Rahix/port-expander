@@ -4,7 +4,7 @@ use crate::I2cExt;
 /// `PCA9536` "4-bit I2C-bus and SMBus I/O port"
 pub struct Pca9536<M>(M);
 
-impl<I2C> Pca9536<shared_bus::NullMutex<Driver<I2C>>>
+impl<I2C> Pca9536<core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
 {
@@ -16,10 +16,10 @@ where
 impl<I2C, M> Pca9536<M>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C) -> Self {
-        Self(shared_bus::BusMutex::create(Driver::new(i2c)))
+        Self(crate::PortMutex::create(Driver::new(i2c)))
     }
 
     pub fn split(&mut self) -> Parts<'_, I2C, M> {
@@ -32,10 +32,10 @@ where
     }
 }
 
-pub struct Parts<'a, I2C, M = shared_bus::NullMutex<Driver<I2C>>>
+pub struct Parts<'a, I2C, M = core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
-    M: shared_bus::BusMutex<Bus = Driver<I2C>>,
+    M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub io0: crate::Pin<'a, crate::mode::Input, M>,
     pub io1: crate::Pin<'a, crate::mode::Input, M>,
