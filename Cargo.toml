@@ -16,6 +16,7 @@ edition = "2021"
 std = []
 
 [dependencies]
+critical-section = { version = "1.1.2", optional = true }
 embedded-hal = { version = "1.0.0" }
 shared-bus = "0.3.0"
 
