@@ -7,12 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Support for `PI4IOE5V6408` ([#17]).
+- Added public API to access the underlying port-expander of a pin
+  (`pin.access_port_driver()`) and the register mask for the pin
+  (`pin.pin_mask()`) ([#23]).
 
 ### Changed
 - **BREAKING** Moved to `embedded-hal` 1.0 ([#16]).
+- **BREAKING** Replaced `shared_bus::BusMutex` with our own custom
+  `port_expander::PortMutex` trait ([#26]).  If you need support for custom
+  mutex types, you now need to implement the latter one for your mutex.
 
 [#16]: https://github.com/Rahix/port-expander/pull/16
 [#17]: https://github.com/Rahix/port-expander/pull/17
+[#23]: https://github.com/Rahix/port-expander/pull/23
+[#26]: https://github.com/Rahix/port-expander/pull/26
 
 
 ## [0.4.1] - 2023-12-25
