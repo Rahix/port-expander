@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 ### Added
 - Support for `PI4IOE5V6408` ([#17]).
+- Added support for enabling pull-up/down resistors for port expander input
+  pins ([#22]).
 - Added public API to access the underlying port-expander of a pin
   (`pin.access_port_driver()`) and the register mask for the pin
   (`pin.pin_mask()`) ([#23]).
@@ -19,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#16]: https://github.com/Rahix/port-expander/pull/16
 [#17]: https://github.com/Rahix/port-expander/pull/17
+[#22]: https://github.com/Rahix/port-expander/pull/22
 [#23]: https://github.com/Rahix/port-expander/pull/23
 [#26]: https://github.com/Rahix/port-expander/pull/26
 
