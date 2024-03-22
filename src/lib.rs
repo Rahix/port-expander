@@ -38,6 +38,7 @@
 //! - [`PCF8574`](Pcf8574)
 //! - [`PCF8575`](Pcf8575)
 //! - [`TCA6408A`](Tca6408a)
+//! - [`MCP23017`](Mcp23017)
 //!
 //! ## Non-local sharing
 //! `port-expander` uses a custom trait for abstracting different kinds of mutexes:
@@ -80,6 +81,7 @@ pub(crate) use common::PortDriverPullUp;
 pub(crate) use common::PortDriverTotemPole;
 
 pub use dev::max7321::Max7321;
+pub use dev::mcp23017::Mcp23017;
 pub use dev::pca9536::Pca9536;
 pub use dev::pca9538::Pca9538;
 pub use dev::pca9555::Pca9555;
