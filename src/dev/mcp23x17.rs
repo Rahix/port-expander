@@ -30,8 +30,8 @@ where
     SPI: crate::SpiBus,
 {
     /// Create a new instance of the MCP23S17 with SPI interface
-    pub fn new_mcp23s17(bus: SPI, a0: bool, a1: bool, a2: bool) -> Self {
-        Self::with_mutex(Mcp23S17Bus(bus), a0, a1, a2)
+    pub fn new_mcp23s17(bus: SPI) -> Self {
+        Self::with_mutex(Mcp23S17Bus(bus), false, false, false)
     }
 }
 
@@ -358,10 +358,10 @@ mod tests {
             mock_i2c::Transaction::write_read(0x22, vec![0x01], vec![0x7e]),
             mock_i2c::Transaction::write(0x22, vec![0x01, 0xfe]),
             // output gpa0, gpb0
-            mock_i2c::Transaction::write(0x22, vec![0x12, 0xff]),
-            mock_i2c::Transaction::write(0x22, vec![0x12, 0xfe]),
-            mock_i2c::Transaction::write(0x22, vec![0x13, 0xff]),
-            mock_i2c::Transaction::write(0x22, vec![0x13, 0xfe]),
+            mock_i2c::Transaction::write(0x22, vec![0x12, 0x01]),
+            mock_i2c::Transaction::write(0x22, vec![0x12, 0x00]),
+            mock_i2c::Transaction::write(0x22, vec![0x13, 0x01]),
+            mock_i2c::Transaction::write(0x22, vec![0x13, 0x00]),
             // input gpa7, gpb7
             mock_i2c::Transaction::write_read(0x22, vec![0x12], vec![0x80]),
             mock_i2c::Transaction::write_read(0x22, vec![0x12], vec![0x7f]),
@@ -401,83 +401,83 @@ mod tests {
         let expectations = [
             // pin setup gpa0
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
             mock_spi::Transaction::read(0xff),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x00, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x00, 0xfe]),
             mock_spi::Transaction::transaction_end(),
             // pin setup gpa7
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
             mock_spi::Transaction::read(0xfe),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x00, 0x7e]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x00, 0x7e]),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
             mock_spi::Transaction::read(0x7e),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x00, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x00, 0xfe]),
             mock_spi::Transaction::transaction_end(),
             // pin setup gpb0
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
             mock_spi::Transaction::read(0xff),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x01, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x01, 0xfe]),
             mock_spi::Transaction::transaction_end(), // pin setup gpb7
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
             mock_spi::Transaction::read(0xfe),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x01, 0x7e]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x01, 0x7e]),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
             mock_spi::Transaction::read(0x7e),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x01, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x01, 0xfe]),
             mock_spi::Transaction::transaction_end(),
             // output gpa0, gpb0
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x12, 0xff]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x12, 0x01]),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x12, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x12, 0x00]),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x13, 0xff]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x13, 0x01]),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x44, 0x13, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x13, 0x00]),
             mock_spi::Transaction::transaction_end(),
             // input gpa7, gpb7
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x12]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x12]),
             mock_spi::Transaction::read(0x80),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x12]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x12]),
             mock_spi::Transaction::read(0x7f),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x13]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x13]),
             mock_spi::Transaction::read(0x80),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x45, 0x13]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x13]),
             mock_spi::Transaction::read(0x7f),
             mock_spi::Transaction::transaction_end(),
         ];
         let mut bus = mock_spi::Mock::new(&expectations);
 
-        let mut pca = super::Mcp23x17::new_mcp23s17(bus.clone(), false, true, false);
+        let mut pca = super::Mcp23x17::new_mcp23s17(bus.clone());
         let pca_pins = pca.split();
 
         let mut gpa0 = pca_pins.gpa0.into_output().unwrap();
