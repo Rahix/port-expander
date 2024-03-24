@@ -4,6 +4,7 @@
 //! the crate should be enough.
 
 pub mod max7321;
+pub mod mcp23x17;
 pub mod pca9536;
 pub mod pca9538;
 pub mod pca9555;
@@ -13,4 +14,3 @@ pub mod pcf8574;
 pub mod pcf8575;
 pub mod pi4ioe5v6408;
 pub mod tca6408a;
-pub mod mcp23017;
