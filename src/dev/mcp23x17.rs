@@ -110,11 +110,11 @@ enum Regs {
     INTCONA = 0x08,
     /// IOCON: configuration register
     /// - Pin 7: BANK (which driver assumes stays 0)
-    /// - Pin 6: MIRROR: if enabled, INTA is logically ORed; an interrupt on either
+    /// - Pin 6: MIRROR: if enabled, INT{A,B} are logically ORed; an interrupt on either
     ///          port will cause both pins to activate
     /// - Pin 5: SEQOP: controls the incrementing function of the address pointer
     /// - Pin 4: DISSLW: disables slew rate control on SDA
-    /// - Pin 3: HAEN: no effect on MCP23017
+    /// - Pin 3: HAEN: no effect on MCP23017, enables address pins on MCP23S17
     /// - Pin 2: ODR: interrupt pins are 0=active-driver outputs (INTPOL sets polarity)
     ///          or 1=open-drain outputs (overrides INTPOL)
     /// - Pin 1: INTPOL: interrupt pin is 0=active-low or 1=active-high
@@ -145,15 +145,15 @@ enum Regs {
     INTCONB = 0x09,
     /// IOCON: configuration register
     /// - Pin 7: BANK (which driver assumes stays 0)
-    /// - Pin 6: MIRROR: if enabled, INTB is logically ORed; an interrupt on either
+    /// - Pin 6: MIRROR: if enabled, INT{A,B} are logically ORed; an interrupt on either
     ///          port will cause both pins to activate
     /// - Pin 5: SEQOP: controls the incrementing function of the address pointer
     /// - Pin 4: DISSLW: disables slew rate control on SDA
-    /// - Pin 3: HAEN: no effect on MCP23017
+    /// - Pin 3: HAEN: no effect on MCP23017, enables address pins on MCP23S17
     /// - Pin 2: ODR: interrupt pins are 0=active-driver outputs (INTPOL sets polarity)
     ///          or 1=open-drain outputs (overrides INTPOL)
     /// - Pin 1: INTPOL: interrupt pin is 0=active-low or 1=active-high
-    /// - Pin 0: unused    INTCONB = 0x09,
+    /// - Pin 0: unused
     IOCONB = 0x0b,
     /// GPPU: GPIO pull-ups: enables weak internal pull-ups on each pin (when configured
     ///   as an input)
