@@ -9,7 +9,7 @@
 //! together or independently.
 //!
 //! When passing 16-bit values to this driver, the upper byte corresponds to port
-//! B (pins 7..0) and the lower byte corresponds to port B (pins 7..0).
+//! B (pins 7..0) and the lower byte corresponds to port A (pins 7..0).
 use crate::I2cExt;
 
 /// `MCP23x17` "16-Bit I/O Expander with Serial Interface" with I2C or SPI interface
@@ -91,58 +91,81 @@ where
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+/// N.B.: These values are for BANK=0, which is the reset state of
+/// the chip (and this driver does not change).
+///
+/// For all registers, the reset value is 0x00, except for
+/// IODIR{A,B} which are 0xFF (making all pins inputs) at reset.
 enum Regs {
-    // N.B.: These values are for BANK=0, which is the reset state of
-    // the chip (and this driver does not change).
-    //
-    // For all registers, the reset value is 0x00, except for
-    // IODIR{A,B} which are 0xFF (making all pins inputs) at reset.
-    //
-    // IODIR: input/output direction: 0=output; 1=input
-    // IPOL: input polarity: 0=register values match input pins; 1=opposite
-    // GPINTEN: interrupt-on-change: 0=disable; 1=enable
-    // DEFVAL: default values for interrupt-on-change
-    // INTCON: interrupt-on-change config: 0=compare to previous pin value;
-    //   1=compare to corresponding bit in DEFVAL
-    // IOCON: configuration register
-    // - Pin 7: BANK (which driver assumes stays 0)
-    // - Pin 6: MIRROR: if enabled, INT{A,B} are logically ORed; an interrupt on either
-    //          port will cause both pins to activate
-    // - Pin 5: SEQOP: controls the incrementing function of the address pointer
-    // - Pin 4: DISSLW: disables slew rate control on SDA
-    // - Pin 3: HAEN: no effect on MCP23017
-    // - Pin 2: ODR: interrupt pins are 0=active-driver outputs (INTPOL sets polarity)
-    //          or 1=open-drain outputs (overrides INTPOL)
-    // - Pin 1: INTPOL: interrupt pin is 0=active-low or 1=active-high
-    // - Pin 0: unused
-    // GPPU: GPIO pull-ups: enables weak internal pull-ups on each pin (when configured
-    //   as an input)
-    // INTF: interrupt flags: 0=no interrupt pending; 1=corresponding pin caused interrupt
-    // INTCAP: interrupt captured value: reflects value of each pin at the time that they
-    //   caused an interrupt
-    // GPIO: reflects logic level on pins
-    // OLAT: output latches: sets state for pins configured as outputs
+    /// IODIR: input/output direction: 0=output; 1=input
     IODIRA = 0x00,
+    /// IPOL: input polarity: 0=register values match input pins; 1=opposite
     IPOLA = 0x02,
+    /// GPINTEN: interrupt-on-change: 0=disable; 1=enable
     GPINTENA = 0x04,
+    /// DEFVAL: default values for interrupt-on-change
     DEFVALA = 0x06,
+    /// INTCON: interrupt-on-change config: 0=compare to previous pin value;
+    ///   1=compare to corresponding bit in DEFVAL
     INTCONA = 0x08,
+    /// IOCON: configuration register
+    /// - Pin 7: BANK (which driver assumes stays 0)
+    /// - Pin 6: MIRROR: if enabled, INTA is logically ORed; an interrupt on either
+    ///          port will cause both pins to activate
+    /// - Pin 5: SEQOP: controls the incrementing function of the address pointer
+    /// - Pin 4: DISSLW: disables slew rate control on SDA
+    /// - Pin 3: HAEN: no effect on MCP23017
+    /// - Pin 2: ODR: interrupt pins are 0=active-driver outputs (INTPOL sets polarity)
+    ///          or 1=open-drain outputs (overrides INTPOL)
+    /// - Pin 1: INTPOL: interrupt pin is 0=active-low or 1=active-high
+    /// - Pin 0: unused
     IOCONA = 0x0a,
+    /// GPPU: GPIO pull-ups: enables weak internal pull-ups on each pin (when configured
+    ///   as an input)
     GPPUA = 0x0c,
+    /// INTF: interrupt flags: 0=no interrupt pending; 1=corresponding pin caused interrupt
     INTFA = 0x0e,
+    /// INTCAP: interrupt captured value: reflects value of each pin at the time that they
+    ///   caused an interrupt
     INTCAPA = 0x10,
+    /// GPIO: reflects logic level on pins
     GPIOA = 0x12,
+    /// OLAT: output latches: sets state for pins configured as outputs
     OLATA = 0x14,
+    /// IODIR: input/output direction: 0=output; 1=input
     IODIRB = 0x01,
+    /// IPOL: input polarity: 0=register values match input pins; 1=opposite
     IPOLB = 0x03,
+    /// GPINTEN: interrupt-on-change: 0=disable; 1=enable
     GPINTENB = 0x05,
+    /// DEFVAL: default values for interrupt-on-change
     DEFVALB = 0x07,
+    /// INTCON: interrupt-on-change config: 0=compare to previous pin value;
+    ///   1=compare to corresponding bit in DEFVAL
     INTCONB = 0x09,
+    /// IOCON: configuration register
+    /// - Pin 7: BANK (which driver assumes stays 0)
+    /// - Pin 6: MIRROR: if enabled, INTB is logically ORed; an interrupt on either
+    ///          port will cause both pins to activate
+    /// - Pin 5: SEQOP: controls the incrementing function of the address pointer
+    /// - Pin 4: DISSLW: disables slew rate control on SDA
+    /// - Pin 3: HAEN: no effect on MCP23017
+    /// - Pin 2: ODR: interrupt pins are 0=active-driver outputs (INTPOL sets polarity)
+    ///          or 1=open-drain outputs (overrides INTPOL)
+    /// - Pin 1: INTPOL: interrupt pin is 0=active-low or 1=active-high
+    /// - Pin 0: unused    INTCONB = 0x09,
     IOCONB = 0x0b,
+    /// GPPU: GPIO pull-ups: enables weak internal pull-ups on each pin (when configured
+    ///   as an input)
     GPPUB = 0x0d,
+    /// INTF: interrupt flags: 0=no interrupt pending; 1=corresponding pin caused interrupt
     INTFB = 0x0f,
+    /// INTCAP: interrupt captured value: reflects value of each pin at the time that they
+    ///   caused an interrupt
     INTCAPB = 0x11,
+    /// GPIO: reflects logic level on pins
     GPIOB = 0x13,
+    /// OLAT: output latches: sets state for pins configured as outputs
     OLATB = 0x15,
 }
 
@@ -163,7 +186,7 @@ impl<B> Driver<B> {
         let addr = 0x20 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8);
         Self {
             bus,
-            out: 0xffff,
+            out: 0x0000,
             addr,
         }
     }
