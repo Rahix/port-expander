@@ -1,4 +1,4 @@
-use embedded_hal::i2c as hal_i2c;
+use embedded_hal::{i2c as hal_i2c, spi as hal_spi};
 
 /// Blanket trait for types implementing `i2c::I2c
 pub trait I2cBus: hal_i2c::I2c {
@@ -55,4 +55,15 @@ impl<I2C: I2cBus> I2cExt for I2C {
         self.write_read(addr, &[reg.into()], &mut buf)?;
         Ok(buf[0])
     }
+}
+
+pub trait SpiBus: hal_spi::SpiDevice {
+    type BusError: From<<Self as hal_spi::ErrorType>::Error>;
+}
+
+impl<T, E> SpiBus for T
+where
+    T: hal_spi::SpiDevice<Error = E>,
+{
+    type BusError = E;
 }
