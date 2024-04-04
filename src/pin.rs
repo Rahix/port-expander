@@ -40,14 +40,36 @@ where
         self.port_driver.lock(|pd| f(pd))
     }
 }
+
+#[derive(Debug)]
+pub struct PinError<BE> {
+    pub bus_error: BE,
+}
+
+impl<BE> hal_digital::Error for PinError<BE>
+where
+    BE: core::fmt::Debug,
+{
+    fn kind(&self) -> hal_digital::ErrorKind {
+        hal_digital::ErrorKind::Other
+    }
+}
+
+impl<BE> From<BE> for PinError<BE> {
+    fn from(value: BE) -> Self {
+        Self { bus_error: value }
+    }
+}
+
 impl<'a, MODE, MUTEX, PD> ErrorType for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
-    PD::Error: embedded_hal::digital::Error,
+    PD::Error: core::fmt::Debug,
     MUTEX: crate::PortMutex<Port = PD>,
 {
-    type Error = PD::Error;
+    type Error = PinError<PD::Error>;
 }
+
 impl<'a, MODE, MUTEX, PD> Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
@@ -164,15 +186,15 @@ where
 impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> hal_digital::InputPin for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
-    <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
+    <PD as crate::PortDriver>::Error: core::fmt::Debug,
     MUTEX: crate::PortMutex<Port = PD>,
 {
-    fn is_high(&mut self) -> Result<bool, <PD as crate::PortDriver>::Error> {
-        Pin::is_high(self)
+    fn is_high(&mut self) -> Result<bool, Self::Error> {
+        Ok(Pin::is_high(self)?)
     }
 
-    fn is_low(&mut self) -> Result<bool, <PD as crate::PortDriver>::Error> {
-        Pin::is_low(self)
+    fn is_low(&mut self) -> Result<bool, Self::Error> {
+        Ok(Pin::is_low(self)?)
     }
 }
 
@@ -220,15 +242,15 @@ where
 impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::OutputPin for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
-    <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
+    <PD as crate::PortDriver>::Error: core::fmt::Debug,
     MUTEX: crate::PortMutex<Port = PD>,
 {
     fn set_low(&mut self) -> Result<(), Self::Error> {
-        Pin::set_low(self)
+        Ok(Pin::set_low(self)?)
     }
 
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        Pin::set_high(self)
+        Ok(Pin::set_high(self)?)
     }
 }
 
@@ -236,18 +258,18 @@ impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::StatefulOutputPin
     for Pin<'a, MODE, MUTEX>
 where
     PD: crate::PortDriver + crate::PortDriverTotemPole,
-    <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
+    <PD as crate::PortDriver>::Error: core::fmt::Debug,
     MUTEX: crate::PortMutex<Port = PD>,
 {
     fn is_set_high(&mut self) -> Result<bool, Self::Error> {
-        Pin::is_set_high(self)
+        Ok(Pin::is_set_high(self)?)
     }
 
     fn is_set_low(&mut self) -> Result<bool, Self::Error> {
-        Pin::is_set_low(self)
+        Ok(Pin::is_set_low(self)?)
     }
 
     fn toggle(&mut self) -> Result<(), Self::Error> {
-        Pin::toggle(self)
+        Ok(Pin::toggle(self)?)
     }
 }
