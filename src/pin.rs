@@ -78,7 +78,7 @@ where
     /// Configure this pin as an input.
     ///
     /// The exact electrical details depend on the port-expander device which is used.
-    pub fn into_input(self) -> Result<Pin<'a, crate::mode::Input, MUTEX>, PD::Error> {
+    pub fn into_input(self) -> Result<Pin<'a, crate::mode::Input, MUTEX>, PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Input, false))?;
         Ok(Pin {
@@ -92,7 +92,7 @@ where
     ///
     /// The LOW state is, as long as he port-expander chip allows this, entered without any
     /// electrical glitch.
-    pub fn into_output(self) -> Result<Pin<'a, crate::mode::Output, MUTEX>, PD::Error> {
+    pub fn into_output(self) -> Result<Pin<'a, crate::mode::Output, MUTEX>, PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Output, false))?;
         Ok(Pin {
@@ -106,7 +106,9 @@ where
     ///
     /// The HIGH state is, as long as he port-expander chip allows this, entered without any
     /// electrical glitch.
-    pub fn into_output_high(self) -> Result<Pin<'a, crate::mode::Output, MUTEX>, PD::Error> {
+    pub fn into_output_high(
+        self,
+    ) -> Result<Pin<'a, crate::mode::Output, MUTEX>, PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| drv.set_direction(self.pin_mask, crate::Direction::Output, true))?;
         Ok(Pin {
@@ -123,14 +125,14 @@ where
     MUTEX: crate::PortMutex<Port = PD>,
 {
     /// Turn on hardware polarity inversion for this pin.
-    pub fn into_inverted(self) -> Result<Self, PD::Error> {
+    pub fn into_inverted(self) -> Result<Self, PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| drv.set_polarity(self.pin_mask, true))?;
         Ok(self)
     }
 
     /// Set hardware polarity inversion for this pin.
-    pub fn set_inverted(&mut self, inverted: bool) -> Result<(), PD::Error> {
+    pub fn set_inverted(&mut self, inverted: bool) -> Result<(), PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| drv.set_polarity(self.pin_mask, inverted))?;
         Ok(())
@@ -143,13 +145,13 @@ where
     MUTEX: crate::PortMutex<Port = PD>,
 {
     /// Read the pin's input state and return `true` if it is HIGH.
-    pub fn is_high(&self) -> Result<bool, PD::Error> {
+    pub fn is_high(&self) -> Result<bool, PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| Ok(drv.get(self.pin_mask, 0)? == self.pin_mask))
     }
 
     /// Read the pin's input state and return `true` if it is LOW.
-    pub fn is_low(&self) -> Result<bool, PD::Error> {
+    pub fn is_low(&self) -> Result<bool, PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| Ok(drv.get(0, self.pin_mask)? == self.pin_mask))
     }
@@ -163,9 +165,10 @@ where
     /// Enable/Disable pull-up resistors for this pin.
     ///
     /// If `enable` is `true`, the pull-up resistor is enabled, otherwise the pin is configured as floating input.
-    pub fn enable_pull_up(&mut self, enable: bool) -> Result<(), PD::Error> {
+    pub fn enable_pull_up(&mut self, enable: bool) -> Result<(), PinError<PD::Error>> {
         self.port_driver
-            .lock(|drv| drv.set_pull_up(self.pin_mask, enable))
+            .lock(|drv| drv.set_pull_up(self.pin_mask, enable))?;
+        Ok(())
     }
 }
 
@@ -177,9 +180,10 @@ where
     /// Enable/Disable pull-down resistors for this pin.
     ///
     /// If `enable` is `true`, the pull-down resistor is enabled, otherwise the pin is configured as floating input.
-    pub fn enable_pull_down(&mut self, enable: bool) -> Result<(), PD::Error> {
+    pub fn enable_pull_down(&mut self, enable: bool) -> Result<(), PinError<PD::Error>> {
         self.port_driver
-            .lock(|drv| drv.set_pull_down(self.pin_mask, enable))
+            .lock(|drv| drv.set_pull_down(self.pin_mask, enable))?;
+        Ok(())
     }
 }
 
@@ -190,11 +194,11 @@ where
     MUTEX: crate::PortMutex<Port = PD>,
 {
     fn is_high(&mut self) -> Result<bool, Self::Error> {
-        Ok(Pin::is_high(self)?)
+        Pin::is_high(self)
     }
 
     fn is_low(&mut self) -> Result<bool, Self::Error> {
-        Ok(Pin::is_low(self)?)
+        Pin::is_low(self)
     }
 }
 
@@ -206,21 +210,23 @@ where
     /// Set the pin's output state to HIGH.
     ///
     /// Note that this can have different electrical meanings depending on the port-expander chip.
-    pub fn set_high(&mut self) -> Result<(), PD::Error> {
-        self.port_driver.lock(|drv| drv.set(self.pin_mask, 0))
+    pub fn set_high(&mut self) -> Result<(), PinError<PD::Error>> {
+        self.port_driver.lock(|drv| drv.set(self.pin_mask, 0))?;
+        Ok(())
     }
 
     /// Set the pin's output state to LOW.
     ///
     /// Note that this can have different electrical meanings depending on the port-expander chip.
-    pub fn set_low(&mut self) -> Result<(), PD::Error> {
-        self.port_driver.lock(|drv| drv.set(0, self.pin_mask))
+    pub fn set_low(&mut self) -> Result<(), PinError<PD::Error>> {
+        self.port_driver.lock(|drv| drv.set(0, self.pin_mask))?;
+        Ok(())
     }
 
     /// Return `true` if the pin's output state is HIGH.
     ///
     /// This method does **not** read the pin's electrical state.
-    pub fn is_set_high(&self) -> Result<bool, PD::Error> {
+    pub fn is_set_high(&self) -> Result<bool, PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| Ok(drv.is_set(self.pin_mask, 0)? == self.pin_mask))
     }
@@ -228,14 +234,15 @@ where
     /// Return `true` if the pin's output state is LOW.
     ///
     /// This method does **not** read the pin's electrical state.
-    pub fn is_set_low(&self) -> Result<bool, PD::Error> {
+    pub fn is_set_low(&self) -> Result<bool, PinError<PD::Error>> {
         self.port_driver
             .lock(|drv| Ok(drv.is_set(0, self.pin_mask)? == self.pin_mask))
     }
 
     /// Toggle the pin's output state.
-    pub fn toggle(&mut self) -> Result<(), PD::Error> {
-        self.port_driver.lock(|drv| drv.toggle(self.pin_mask))
+    pub fn toggle(&mut self) -> Result<(), PinError<PD::Error>> {
+        self.port_driver.lock(|drv| drv.toggle(self.pin_mask))?;
+        Ok(())
     }
 }
 
@@ -246,11 +253,11 @@ where
     MUTEX: crate::PortMutex<Port = PD>,
 {
     fn set_low(&mut self) -> Result<(), Self::Error> {
-        Ok(Pin::set_low(self)?)
+        Pin::set_low(self)
     }
 
     fn set_high(&mut self) -> Result<(), Self::Error> {
-        Ok(Pin::set_high(self)?)
+        Pin::set_high(self)
     }
 }
 
@@ -262,14 +269,14 @@ where
     MUTEX: crate::PortMutex<Port = PD>,
 {
     fn is_set_high(&mut self) -> Result<bool, Self::Error> {
-        Ok(Pin::is_set_high(self)?)
+        Pin::is_set_high(self)
     }
 
     fn is_set_low(&mut self) -> Result<bool, Self::Error> {
-        Ok(Pin::is_set_low(self)?)
+        Pin::is_set_low(self)
     }
 
     fn toggle(&mut self) -> Result<(), Self::Error> {
-        Ok(Pin::toggle(self)?)
+        Pin::toggle(self)
     }
 }
