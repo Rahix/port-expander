@@ -41,23 +41,33 @@ where
     }
 }
 
+/// Error type for [`Pin`] which implements [`embedded_hal::digital::Error`].
 #[derive(Debug)]
-pub struct PinError<BE> {
-    pub bus_error: BE,
+pub struct PinError<PDE> {
+    driver_error: PDE,
 }
 
-impl<BE> hal_digital::Error for PinError<BE>
+impl<PDE> PinError<PDE> {
+    /// The upstream port driver error that occurred
+    pub fn driver_error(&self) -> &PDE {
+        &self.driver_error
+    }
+}
+
+impl<PDE> hal_digital::Error for PinError<PDE>
 where
-    BE: core::fmt::Debug,
+    PDE: core::fmt::Debug,
 {
     fn kind(&self) -> hal_digital::ErrorKind {
         hal_digital::ErrorKind::Other
     }
 }
 
-impl<BE> From<BE> for PinError<BE> {
-    fn from(value: BE) -> Self {
-        Self { bus_error: value }
+impl<PDE> From<PDE> for PinError<PDE> {
+    fn from(value: PDE) -> Self {
+        Self {
+            driver_error: value,
+        }
     }
 }
 
