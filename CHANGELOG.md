@@ -8,7 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Added
 - Support for `MCP23017` (I2C variant) and `MCP23S17` (SPI variant) ([#27]).
 
+#### Fixed
+- Fixed `embedded-hal` digital I/O trait implementations being unusable due to
+  usage of an incompatible error type ([#30]).
+
+#### Changed
+- **BREAKING** `Pin` methods now return a custom error type which wraps the bus
+  error instead of returning the bus error directly ([#30]).
+
 [#27]: https://github.com/Rahix/port-expander/pull/27
+[#30]: https://github.com/Rahix/port-expander/pull/30
 
 
 ## [0.5.0] - 2024-02-19
