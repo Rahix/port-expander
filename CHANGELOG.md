@@ -5,17 +5,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+### Added
+- Implement polarity and pull-up/down support for `MCP23017` and `MCP23S17` ([#31]).
+
+[#31]: https://github.com/Rahix/port-expander/pull/31
 
 
 ## [0.6.0] - 2024-05-10
-#### Added
+### Added
 - Support for `MCP23017` (I2C variant) and `MCP23S17` (SPI variant) ([#27]).
 
-#### Fixed
+### Fixed
 - Fixed `embedded-hal` digital I/O trait implementations being unusable due to
   usage of an incompatible error type ([#30]).
 
-#### Changed
+### Changed
 - **BREAKING** `Pin` methods now return a custom error type which wraps the bus
   error instead of returning the bus error directly ([#30]).
 
