@@ -260,6 +260,58 @@ impl<B: Mcp23x17Bus> crate::PortDriverTotemPole for Driver<B> {
     }
 }
 
+impl<B: Mcp23x17Bus> crate::PortDriverPullUp for Driver<B> {
+    fn set_pull_up(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error> {
+        let (mask_set, mask_clear) = match enable {
+            true => (mask as u16, 0),
+            false => (0, mask as u16),
+        };
+        if mask & 0x00FF != 0 {
+            self.bus.update_reg(
+                self.addr,
+                Regs::GPPUA,
+                (mask_set & 0xFF) as u8,
+                (mask_clear & 0xFF) as u8,
+            )?;
+        }
+        if mask & 0xFF00 != 0 {
+            self.bus.update_reg(
+                self.addr,
+                Regs::GPPUB,
+                (mask_set >> 8) as u8,
+                (mask_clear >> 8) as u8,
+            )?;
+        }
+        Ok(())
+    }
+}
+
+impl<B: Mcp23x17Bus> crate::PortDriverPolarity for Driver<B> {
+    fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error> {
+        let (mask_set, mask_clear) = match inverted {
+            true => (mask as u16, 0),
+            false => (0, mask as u16),
+        };
+        if mask & 0x00FF != 0 {
+            self.bus.update_reg(
+                self.addr,
+                Regs::IPOLA,
+                (mask_set & 0xFF) as u8,
+                (mask_clear & 0xFF) as u8,
+            )?;
+        }
+        if mask & 0xFF00 != 0 {
+            self.bus.update_reg(
+                self.addr,
+                Regs::IPOLB,
+                (mask_set >> 8) as u8,
+                (mask_clear >> 8) as u8,
+            )?;
+        }
+        Ok(())
+    }
+}
+
 // We need these newtype wrappers since we can't implement `Mcp23x17Bus` for both `I2cBus` and `SpiBus`
 // at the same time
 pub struct Mcp23017Bus<I2C>(I2C);
