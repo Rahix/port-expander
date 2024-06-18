@@ -7,6 +7,7 @@ pub mod max7321;
 pub mod mcp23x17;
 pub mod pca9536;
 pub mod pca9538;
+pub mod pca9554;
 pub mod pca9555;
 pub mod pcal6408a;
 pub mod pcal6416a;
