@@ -1,5 +1,5 @@
 use core::marker::PhantomData;
-use embedded_hal::digital::{self as hal_digital, ErrorType};
+use embedded_hal::digital::{self as hal_digital};
 
 /// Representation of a port-expander pin.
 ///
@@ -71,9 +71,9 @@ impl<PDE> From<PDE> for PinError<PDE> {
     }
 }
 
-impl<'a, MODE, MUTEX, PD> ErrorType for Pin<'a, MODE, MUTEX>
+impl<'a, MODE, MUTEX, PD> hal_digital::ErrorType for Pin<'a, MODE, MUTEX>
 where
-    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    PD: crate::PortDriver,
     PD::Error: core::fmt::Debug,
     MUTEX: crate::PortMutex<Port = PD>,
 {
@@ -199,7 +199,7 @@ where
 
 impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> hal_digital::InputPin for Pin<'a, MODE, MUTEX>
 where
-    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    PD: crate::PortDriver,
     <PD as crate::PortDriver>::Error: core::fmt::Debug,
     MUTEX: crate::PortMutex<Port = PD>,
 {
@@ -258,7 +258,7 @@ where
 
 impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::OutputPin for Pin<'a, MODE, MUTEX>
 where
-    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    PD: crate::PortDriver,
     <PD as crate::PortDriver>::Error: core::fmt::Debug,
     MUTEX: crate::PortMutex<Port = PD>,
 {
@@ -274,7 +274,7 @@ where
 impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::StatefulOutputPin
     for Pin<'a, MODE, MUTEX>
 where
-    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    PD: crate::PortDriver,
     <PD as crate::PortDriver>::Error: core::fmt::Debug,
     MUTEX: crate::PortMutex<Port = PD>,
 {
