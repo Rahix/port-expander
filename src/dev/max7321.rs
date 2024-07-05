@@ -88,6 +88,18 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     }
 }
 
+impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
+    fn set_direction(
+        &mut self,
+        _mask: u32,
+        _dir: crate::Direction,
+        _state: bool,
+    ) -> Result<(), Self::Error> {
+        // max7321 does not have dedicated directions
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use embedded_hal_mock::eh1::i2c as mock_i2c;
