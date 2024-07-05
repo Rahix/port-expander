@@ -40,9 +40,10 @@ where
         self.port_driver.lock(|pd| f(pd))
     }
 }
+
 impl<'a, MODE, MUTEX, PD> ErrorType for Pin<'a, MODE, MUTEX>
 where
-    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    PD: crate::PortDriver,
     PD::Error: embedded_hal::digital::Error,
     MUTEX: crate::PortMutex<Port = PD>,
 {
@@ -163,7 +164,7 @@ where
 
 impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> hal_digital::InputPin for Pin<'a, MODE, MUTEX>
 where
-    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    PD: crate::PortDriver,
     <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
     MUTEX: crate::PortMutex<Port = PD>,
 {
@@ -219,7 +220,7 @@ where
 
 impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::OutputPin for Pin<'a, MODE, MUTEX>
 where
-    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    PD: crate::PortDriver,
     <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
     MUTEX: crate::PortMutex<Port = PD>,
 {
@@ -235,7 +236,7 @@ where
 impl<'a, MODE: crate::mode::HasOutput, MUTEX, PD> hal_digital::StatefulOutputPin
     for Pin<'a, MODE, MUTEX>
 where
-    PD: crate::PortDriver + crate::PortDriverTotemPole,
+    PD: crate::PortDriver,
     <PD as crate::PortDriver>::Error: embedded_hal::digital::Error,
     MUTEX: crate::PortMutex<Port = PD>,
 {
