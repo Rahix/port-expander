@@ -5,6 +5,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+#### Fixed
+- Fixed non-totem-pole devices not having `embedded_hal::{InputPin, OutputPin}`
+  implementations due to a superfluous trait bound ([#35]).  This was a
+  regression in 0.5.0.
+ 
+[#35]: https://github.com/Rahix/port-expander/pull/35
 
 
 ## [0.6.1] - 2024-05-10
