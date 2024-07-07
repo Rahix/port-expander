@@ -5,6 +5,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+
+## [0.5.1] - 2024-07-07
 ### Fixed
 - Fixed non-totem-pole devices not having `embedded_hal::{InputPin, OutputPin}`
   implementations due to a superfluous trait bound.  This fix was backported
@@ -97,7 +100,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Initial Release, with support for `PCA9536`, `PCA9555`, `PCF8574`, and
 `PCF8574A`.
 
-[Unreleased]: https://github.com/rahix/port-expander/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/rahix/port-expander/compare/v0.5.1...HEAD
+[0.5.1]: https://github.com/rahix/port-expander/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/rahix/port-expander/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/rahix/port-expander/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/rahix/port-expander/compare/v0.3.1...v0.4.0
