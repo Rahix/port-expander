@@ -39,6 +39,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 [#30]: https://github.com/Rahix/port-expander/pull/30
 
 
+## [0.5.1] - 2024-07-07
+### Fixed
+- Fixed non-totem-pole devices not having `embedded_hal::{InputPin, OutputPin}`
+  implementations due to a superfluous trait bound.  This fix was backported
+  from 0.6.2.
+
+
 ## [0.5.0] - 2024-02-19
 ### Added
 - Support for `PI4IOE5V6408` ([#17]).
@@ -129,6 +136,7 @@ Initial Release, with support for `PCA9536`, `PCA9555`, `PCF8574`, and
 [0.6.2]: https://github.com/rahix/port-expander/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/rahix/port-expander/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/rahix/port-expander/compare/v0.5.0...v0.6.0
+[0.5.1]: https://github.com/rahix/port-expander/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/rahix/port-expander/compare/v0.4.1...v0.5.0
 [0.4.1]: https://github.com/rahix/port-expander/compare/v0.4.0...v0.4.1
 [0.4.0]: https://github.com/rahix/port-expander/compare/v0.3.1...v0.4.0
