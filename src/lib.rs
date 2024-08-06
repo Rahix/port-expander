@@ -67,6 +67,8 @@ mod pin;
 
 pub use bus::I2cBus;
 pub use common::mode;
+pub use multi::fetch_interrupt_state;
+pub use multi::fetch_pin_change;
 pub use multi::read_multiple;
 pub use multi::write_multiple;
 pub use mutex::PortMutex;
@@ -76,6 +78,8 @@ pub(crate) use bus::I2cExt;
 pub(crate) use bus::SpiBus;
 pub(crate) use common::Direction;
 pub(crate) use common::PortDriver;
+pub(crate) use common::PortDriverIrqChange;
+pub(crate) use common::PortDriverIrqState;
 pub(crate) use common::PortDriverPolarity;
 pub(crate) use common::PortDriverPullDown;
 pub(crate) use common::PortDriverPullUp;
