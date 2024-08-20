@@ -3,8 +3,8 @@ use crate::I2cExt;
 
 /// `PCA9554` "8-bit I2C-bus and SMBus I/O port with interrupt"
 pub struct Pca9554<M>(M);
-/// `PCA9554a` "8-bit I2C-bus and SMBus I/O port with interrupt"
-pub struct Pca9554a<M>(M);
+/// `PCA9554A` "8-bit I2C-bus and SMBus I/O port with interrupt"
+pub struct Pca9554A<M>(M);
 
 impl<I2C> Pca9554<core::cell::RefCell<Driver<I2C>>>
 where
@@ -15,7 +15,7 @@ where
     }
 }
 
-impl<I2C> Pca9554a<core::cell::RefCell<Driver<I2C>>>
+impl<I2C> Pca9554A<core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
 {
@@ -47,7 +47,7 @@ where
     }
 }
 
-impl<I2C, M> Pca9554a<M>
+impl<I2C, M> Pca9554A<M>
 where
     I2C: crate::I2cBus,
     M: crate::PortMutex<Port = Driver<I2C>>,
@@ -218,7 +218,7 @@ mod tests {
         ];
         let mut bus = mock_i2c::Mock::new(&expectations);
 
-        let mut pca = super::Pca9554a::new(bus.clone(), true, false, false);
+        let mut pca = super::Pca9554A::new(bus.clone(), true, false, false);
         let pca_pins = pca.split();
 
         let mut pin0 = pca_pins.io0;
