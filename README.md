@@ -38,6 +38,8 @@ a similar existing implementation as inspiration.  Contributions welcome!
 - [`MAX7321`](https://docs.rs/port-expander/latest/port_expander/dev/max7321/struct.Max7321.html)
 - [`PCA9536`](https://docs.rs/port-expander/latest/port_expander/dev/pca9536/struct.Pca9536.html)
 - [`PCA9538`](https://docs.rs/port-expander/latest/port_expander/dev/pca9538/struct.Pca9538.html)
+- [`PCA9554`](https://docs.rs/port-expander/latest/port_expander/dev/pca9554/struct.Pca9554.html)
+- [`PCA9554A`](https://docs.rs/port-expander/latest/port_expander/dev/pca9554/struct.Pca9554A.html)
 - [`PCA9555`](https://docs.rs/port-expander/latest/port_expander/dev/pca9555/struct.Pca9555.html)
 - [`PCF8574A`](https://docs.rs/port-expander/latest/port_expander/dev/pcf8574/struct.Pcf8574a.html)
 - [`PCF8574`](https://docs.rs/port-expander/latest/port_expander/dev/pcf8574/struct.Pcf8574.html)
