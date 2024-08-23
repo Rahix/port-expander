@@ -30,7 +30,9 @@ where
     M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C, a0: bool, a1: bool, a2: bool) -> Self {
-        Self(crate::PortMutex::create(Driver::new(i2c, false, a0, a1, a2)))
+        Self(crate::PortMutex::create(Driver::new(
+            i2c, false, a0, a1, a2,
+        )))
     }
 
     pub fn split<'a>(&'a mut self) -> Parts<'a, I2C, M> {
