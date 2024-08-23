@@ -5,6 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+#### Added
+- Support for `PCA9554` and `PCA9554A` ([#36]).
+
+[#36]: https://github.com/Rahix/port-expander/pull/36
 
 
 ## [0.6.2] - 2024-07-07
