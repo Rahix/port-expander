@@ -8,7 +8,7 @@ readme = "README.md"
 keywords = ["i2c", "gpio-expander", "gpio", "pca", "pcf"]
 categories = ["embedded", "no-std", "hardware-support"]
 
-version = "0.6.2"
+version = "0.6.3"
 
 edition = "2021"
 
