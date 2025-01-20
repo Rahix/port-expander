@@ -1,6 +1,16 @@
 use embedded_hal::spi::Operation;
 use crate::{SpiBus, PortDriver};
 
+/// Error type for PCA9702 driver.
+/// We wrap both bus errors and "unsupported operation" errors here.
+#[derive(Debug)]
+pub enum Pca9702Error<E> {
+    /// Underlying SPI bus error
+    Bus(E),
+    /// Called an output-only function on an input-only device
+    OutputNotSupported,
+}
+
 /// An 8-bit input-only expander with SPI, based on the PCA9702.
 pub struct Pca9702<M>(M);
 
@@ -89,23 +99,25 @@ pub trait Pca9702BusTrait {
 }
 
 impl<B: Pca9702BusTrait> PortDriver for Driver<B> {
-    type Error = B::BusError;
+    /// Our `Error` is a custom enum wrapping both bus errors and an unsupported-ops error.
+    type Error = Pca9702Error<B::BusError>;
 
-    /// For an input-only expander, "setting" output bits is a no-op. 
+    /// PCA9702 is input-only, return an error here.
     fn set(&mut self, _mask_high: u32, _mask_low: u32) -> Result<(), Self::Error> {
-        Ok(())
+        Err(Pca9702Error::OutputNotSupported)
     }
 
-    /// "is_set" returns 0 for all bits, because we cannot drive anything.
+    /// PCA9702 is input-only, return an error here.
     fn is_set(&mut self, _mask_high: u32, _mask_low: u32) -> Result<u32, Self::Error> {
-        Ok(0)
+        Err(Pca9702Error::OutputNotSupported)
     }
 
     /// Read the actual input bits from the PCA9702 device
     fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
-        let val = self.bus.read_inputs()? as u32;
-        // The port-expander crate wants 1-bits for pins that match the "HIGH" mask
-        // and 1-bits for pins that do *not* match the "LOW" mask.
+        let val = self
+            .bus
+            .read_inputs()
+            .map_err(Pca9702Error::Bus)? as u32;
         Ok((val & mask_high) | (!val & mask_low))
     }
 }
