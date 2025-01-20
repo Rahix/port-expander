@@ -116,6 +116,7 @@ where
 #[cfg(test)]
 mod tests {
     use embedded_hal_mock::eh1::i2c as mock_i2c;
+    use embedded_hal_mock::eh1::spi as mock_spi;
 
     #[test]
     fn pcf8574_write_multiple() {
@@ -195,6 +196,32 @@ mod tests {
         assert_eq!(res, [true, false, true]);
 
         let res = super::read_multiple([&pca_pins.io1, &pca_pins.io0, &pca_pins.io3]).unwrap();
+        assert_eq!(res, [true, false, true]);
+
+        bus.done();
+    }
+
+    #[test]
+    fn pca9702_read_multiple() {
+        let expectations = [
+            mock_spi::Transaction::transaction_start(),
+            mock_spi::Transaction::transfer_in_place(vec![0], vec![0b10101010]),
+            mock_spi::Transaction::transaction_end(),
+
+            mock_spi::Transaction::transaction_start(),
+            mock_spi::Transaction::transfer_in_place(vec![0], vec![0b10101010]),
+            mock_spi::Transaction::transaction_end(),
+        ];
+
+        let mut bus = mock_spi::Mock::new(&expectations);
+
+        let mut pca = crate::Pca9702::new(bus.clone());
+        let pca_pins = pca.split();
+
+        let res = super::read_multiple([&pca_pins.in0, &pca_pins.in1, &pca_pins.in2]).unwrap();
+        assert_eq!(res, [false, true, false]);
+
+        let res = super::read_multiple([&pca_pins.in1, &pca_pins.in0, &pca_pins.in3]).unwrap();
         assert_eq!(res, [true, false, true]);
 
         bus.done();
