@@ -1,5 +1,18 @@
+//! Support for the `PCA9702` "8-Bit Input-Only Expander with SPI"
+//!
+//! Datasheet: https://www.nxp.com/docs/en/data-sheet/PCA9701_PCA9702.pdf
+//!
+//! The PCA9702 offers eight input pins, with an interrupt output that can be asserted when
+//! one or more of the inputs change state (enabled via the `INT_EN` pin). The device reads
+//! its inputs on each falling edge of `CS` and then presents them on `SDOUT` bit-by-bit as
+//! the clock (SCLK) rises.
+//!
+//! Because the PCA9702 is strictly input-only, there is no way to drive output values or
+//! configure directions. Consequently, calling methods that attempt to write or read back
+//! “set” states (e.g., `set()`, `is_set()`) will return an error.
+
+use crate::{PortDriver, SpiBus};
 use embedded_hal::spi::Operation;
-use crate::{SpiBus, PortDriver};
 
 /// Error type for PCA9702 driver.
 /// We wrap both bus errors and "unsupported operation" errors here.
@@ -14,7 +27,7 @@ pub enum Pca9702Error<E> {
 /// An 8-bit input-only expander with SPI, based on the PCA9702.
 pub struct Pca9702<M>(M);
 
-impl<SPI> Pca9702<core::cell::RefCell<Driver<Pca9702Bus<SPI>>>> 
+impl<SPI> Pca9702<core::cell::RefCell<Driver<Pca9702Bus<SPI>>>>
 where
     SPI: crate::SpiBus,
 {
@@ -36,7 +49,7 @@ where
     /// Split this device into its 8 input pins.
     ///
     /// All pins are always configured as inputs on PCA9702 hardware.
-    pub fn split<'a>(&'a mut self) -> Parts<'a, B, M> {
+    pub fn split(&mut self) -> Parts<'_, B, M> {
         Parts {
             in0: crate::Pin::new(0, &self.0),
             in1: crate::Pin::new(1, &self.0),
@@ -102,10 +115,7 @@ impl<B: Pca9702BusTrait> PortDriver for Driver<B> {
 
     /// Read the actual input bits from the PCA9702 device
     fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
-        let val = self
-            .bus
-            .read_inputs()
-            .map_err(Pca9702Error::Bus)? as u32;
+        let val = self.bus.read_inputs().map_err(Pca9702Error::Bus)? as u32;
         Ok((val & mask_high) | (!val & mask_low))
     }
 }
@@ -144,12 +154,10 @@ mod tests {
             SpiTransaction::transaction_start(),
             SpiTransaction::transfer_in_place(vec![0], vec![0xA5]),
             SpiTransaction::transaction_end(),
-    
             // 2nd read
             SpiTransaction::transaction_start(),
             SpiTransaction::transfer_in_place(vec![0], vec![0xA5]),
             SpiTransaction::transaction_end(),
-    
             // 3rd read
             SpiTransaction::transaction_start(),
             SpiTransaction::transfer_in_place(vec![0], vec![0xA5]),
@@ -158,13 +166,13 @@ mod tests {
         let spi_mock = SpiMock::new(&expectations);
         let mut pca = Pca9702::new(spi_mock);
         let pins = pca.split();
-    
+
         // For each call, the driver re-reads from SPI, returning 0xA5 each time.
         // 0xA5 = 0b10100101 => in0=1, in1=0, in2=1, in3=0, in4=0, in5=1, in6=0, in7=1
-        assert_eq!(pins.in0.is_high().unwrap(), true);   // LSB => 1
+        assert_eq!(pins.in0.is_high().unwrap(), true); // LSB => 1
         assert_eq!(pins.in1.is_high().unwrap(), false);
         assert_eq!(pins.in2.is_high().unwrap(), true);
-    
+
         // Finally, consume the mock:
         let mut spi = pca.0.into_inner().bus.0;
         spi.done();
@@ -177,10 +185,10 @@ mod tests {
 
         let err = pca.0.borrow_mut().set(0x01, 0).unwrap_err();
         match err {
-            Pca9702Error::OutputNotSupported => {},
+            Pca9702Error::OutputNotSupported => {}
             _ => panic!("Expected OutputNotSupported error"),
         }
         let mut spi = pca.0.into_inner().bus.0;
-        spi.done(); 
+        spi.done();
     }
 }
