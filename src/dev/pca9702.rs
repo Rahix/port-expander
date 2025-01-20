@@ -18,18 +18,6 @@ impl<SPI> Pca9702<core::cell::RefCell<Driver<Pca9702Bus<SPI>>>>
 where
     SPI: crate::SpiBus,
 {
-    /// Create a new PCA9702 driver from an SPI peripheral.
-    ///
-    /// Example:
-    /// ```
-    /// use port_expander::Pca9702;
-    /// # use embedded_hal_mock::eh1::spi;
-    /// let spi_mock = spi::Mock::new(&[]);
-    /// let mut pca = Pca9702::new(spi_mock);
-    /// let pins = pca.split();
-    /// let in0 = pins.in0; // an InputPin
-    /// let is_high = in0.is_high().unwrap();
-    /// ```
     pub fn new(bus: SPI) -> Self {
         Self::with_mutex(Pca9702Bus(bus))
     }
@@ -141,5 +129,58 @@ where
 
         // buffer[0] now holds bits [in7..in0]
         Ok(buffer[0])
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use embedded_hal_mock::eh1::spi::{Mock as SpiMock, Transaction as SpiTransaction};
+
+    #[test]
+    fn pca9702_read_inputs() {
+        let expectations = [
+            // 1st read
+            SpiTransaction::transaction_start(),
+            SpiTransaction::transfer_in_place(vec![0], vec![0xA5]),
+            SpiTransaction::transaction_end(),
+    
+            // 2nd read
+            SpiTransaction::transaction_start(),
+            SpiTransaction::transfer_in_place(vec![0], vec![0xA5]),
+            SpiTransaction::transaction_end(),
+    
+            // 3rd read
+            SpiTransaction::transaction_start(),
+            SpiTransaction::transfer_in_place(vec![0], vec![0xA5]),
+            SpiTransaction::transaction_end(),
+        ];
+        let spi_mock = SpiMock::new(&expectations);
+        let mut pca = Pca9702::new(spi_mock);
+        let pins = pca.split();
+    
+        // For each call, the driver re-reads from SPI, returning 0xA5 each time.
+        // 0xA5 = 0b10100101 => in0=1, in1=0, in2=1, in3=0, in4=0, in5=1, in6=0, in7=1
+        assert_eq!(pins.in0.is_high().unwrap(), true);   // LSB => 1
+        assert_eq!(pins.in1.is_high().unwrap(), false);
+        assert_eq!(pins.in2.is_high().unwrap(), true);
+    
+        // Finally, consume the mock:
+        let mut spi = pca.0.into_inner().bus.0;
+        spi.done();
+    }
+
+    #[test]
+    fn pca9702_output_fails() {
+        let spi_mock = SpiMock::new(&[]);
+        let pca = Pca9702::new(spi_mock);
+
+        let err = pca.0.borrow_mut().set(0x01, 0).unwrap_err();
+        match err {
+            Pca9702Error::OutputNotSupported => {},
+            _ => panic!("Expected OutputNotSupported error"),
+        }
+        let mut spi = pca.0.into_inner().bus.0;
+        spi.done(); 
     }
 }
