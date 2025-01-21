@@ -11,8 +11,11 @@
 //! configure directions. Consequently, calling methods that attempt to write or read back
 //! “set” states (e.g., `set()`, `is_set()`) will return an error.
 
-use crate::{PortDriver, SpiBus};
+use crate::{Pin, PortDriver, SpiBus};
 use embedded_hal::spi::Operation;
+
+#[cfg(feature = "async")]
+use crate::pin_async::{AsyncPortState, InterruptHandler, PinAsync};
 
 /// An 8-bit input-only expander with SPI, based on the PCA9702.
 pub struct Pca9702<M>(M);
@@ -41,14 +44,38 @@ where
     /// All pins are always configured as inputs on PCA9702 hardware.
     pub fn split(&mut self) -> Parts<'_, B, M> {
         Parts {
-            in0: crate::Pin::new(0, &self.0),
-            in1: crate::Pin::new(1, &self.0),
-            in2: crate::Pin::new(2, &self.0),
-            in3: crate::Pin::new(3, &self.0),
-            in4: crate::Pin::new(4, &self.0),
-            in5: crate::Pin::new(5, &self.0),
-            in6: crate::Pin::new(6, &self.0),
-            in7: crate::Pin::new(7, &self.0),
+            in0: Pin::new(0, &self.0),
+            in1: Pin::new(1, &self.0),
+            in2: Pin::new(2, &self.0),
+            in3: Pin::new(3, &self.0),
+            in4: Pin::new(4, &self.0),
+            in5: Pin::new(5, &self.0),
+            in6: Pin::new(6, &self.0),
+            in7: Pin::new(7, &self.0),
+        }
+    }
+
+    /// Similar to `split()`, but returns asynchronous `PinAsync`s plus
+    /// an `InterruptHandler`.
+    ///
+    /// Usage:
+    /// 1) Create a shared `AsyncPortState` (e.g. in a static or a RefCell).
+    /// 2) Call `split_async(...)` to get your pins and an interrupt handler.
+    /// 3) In your actual IRQ routine, call `interrupts.handle_interrupts()`.
+    pub fn split_async<'a>(
+        &'a mut self,
+        async_state: &'a core::cell::RefCell<AsyncPortState>,
+    ) -> PartsAsync<'a, B, M> {
+        PartsAsync {
+            in0: PinAsync::new(Pin::new(0, &self.0), async_state, 0),
+            in1: PinAsync::new(Pin::new(1, &self.0), async_state, 1),
+            in2: PinAsync::new(Pin::new(2, &self.0), async_state, 2),
+            in3: PinAsync::new(Pin::new(3, &self.0), async_state, 3),
+            in4: PinAsync::new(Pin::new(4, &self.0), async_state, 4),
+            in5: PinAsync::new(Pin::new(5, &self.0), async_state, 5),
+            in6: PinAsync::new(Pin::new(6, &self.0), async_state, 6),
+            in7: PinAsync::new(Pin::new(7, &self.0), async_state, 7),
+            interrupts: InterruptHandler::new(&self.0, async_state),
         }
     }
 }
@@ -59,14 +86,35 @@ where
     B: Pca9702BusTrait,
     M: crate::PortMutex<Port = Driver<B>>,
 {
-    pub in0: crate::Pin<'a, crate::mode::Input, M>,
-    pub in1: crate::Pin<'a, crate::mode::Input, M>,
-    pub in2: crate::Pin<'a, crate::mode::Input, M>,
-    pub in3: crate::Pin<'a, crate::mode::Input, M>,
-    pub in4: crate::Pin<'a, crate::mode::Input, M>,
-    pub in5: crate::Pin<'a, crate::mode::Input, M>,
-    pub in6: crate::Pin<'a, crate::mode::Input, M>,
-    pub in7: crate::Pin<'a, crate::mode::Input, M>,
+    pub in0: Pin<'a, crate::mode::Input, M>,
+    pub in1: Pin<'a, crate::mode::Input, M>,
+    pub in2: Pin<'a, crate::mode::Input, M>,
+    pub in3: Pin<'a, crate::mode::Input, M>,
+    pub in4: Pin<'a, crate::mode::Input, M>,
+    pub in5: Pin<'a, crate::mode::Input, M>,
+    pub in6: Pin<'a, crate::mode::Input, M>,
+    pub in7: Pin<'a, crate::mode::Input, M>,
+}
+
+/// The async equivalent of the normal `Parts` struct.
+/// Each pin is always input, so each is a `PinAsync<mode::Input, M>`.
+#[cfg(feature = "async")]
+pub struct PartsAsync<'a, B, M>
+where
+    B: Pca9702BusTrait,
+    M: crate::PortMutex<Port = Driver<B>>,
+{
+    pub in0: PinAsync<'a, crate::mode::Input, M>,
+    pub in1: PinAsync<'a, crate::mode::Input, M>,
+    pub in2: PinAsync<'a, crate::mode::Input, M>,
+    pub in3: PinAsync<'a, crate::mode::Input, M>,
+    pub in4: PinAsync<'a, crate::mode::Input, M>,
+    pub in5: PinAsync<'a, crate::mode::Input, M>,
+    pub in6: PinAsync<'a, crate::mode::Input, M>,
+    pub in7: PinAsync<'a, crate::mode::Input, M>,
+
+    /// Interrupt handler to be called whenever the expander’s INT pin toggles.
+    pub interrupts: InterruptHandler<'a, M>,
 }
 
 /// Internal driver struct for PCA9702.
