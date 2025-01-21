@@ -240,6 +240,7 @@ where
     <M::Port as PortDriver>::Error: core::fmt::Debug,
 {
     async fn wait_for_high(&mut self) -> Result<(), Self::Error> {
+        // If already high, return immediately
         if self.is_high()? {
             return Ok(());
         }
@@ -327,7 +328,7 @@ impl<'s> Future for WaitForCondition<'s> {
             let pin_waiters = &mut st.waiters[me.pin_index as usize];
 
             if pin_waiters.len() == pin_waiters.capacity() {
-                // In no-std, panic is often the only recourse if we run out of slots.
+                // panic is the only recourse if we run out of slots.
                 panic!("No waker slots left for pin {}", me.pin_index);
             }
 
@@ -338,6 +339,19 @@ impl<'s> Future for WaitForCondition<'s> {
                 })
                 .expect("push must succeed due to capacity check");
             me.registered = true;
+
+            // Re-check if the condition might already be satisfied
+            // based on the last-known state in `st`.  This closes the race
+            // between the initial synchronous check and waker registration.
+            let mask = 1 << me.pin_index;
+            let is_high = (st.last_known_state & mask) != 0;
+            match me.condition {
+                WaitCondition::High if is_high => return Poll::Ready(Ok(())),
+                WaitCondition::Low if !is_high => return Poll::Ready(Ok(())),
+                // RisingEdge / FallingEdge / AnyEdge => we specifically want *future* transitions,
+                // so we do NOT return ready just for the pin currently being high or low.
+                _ => {}
+            }
         }
 
         // We wait to be woken by `handle_interrupts()`.

@@ -15,6 +15,9 @@ use crate::{Pin, PortDriver, SpiBus};
 use embedded_hal::spi::Operation;
 
 #[cfg(feature = "async")]
+use core::cell::RefCell;
+
+#[cfg(feature = "async")]
 use crate::pin_async::{AsyncPortState, InterruptHandler, PinAsync};
 
 /// An 8-bit input-only expander with SPI, based on the PCA9702.
@@ -30,7 +33,7 @@ pub struct Pca9702<M>(
     pub M,
     /// Internal asynchronous state (used only if you call `split_async()`).
     #[cfg(feature = "async")]
-    pub core::cell::RefCell<AsyncPortState>,
+    pub RefCell<AsyncPortState>,
     // If the "async" feature is not enabled, we simply don't store any
     // extra field. For build consistency, let's conditionalize it:
     #[cfg(not(feature = "async"))] (),
@@ -38,7 +41,7 @@ pub struct Pca9702<M>(
 
 impl<SPI> Pca9702<core::cell::RefCell<Driver<Pca9702Bus<SPI>>>>
 where
-    SPI: crate::SpiBus,
+    SPI: SpiBus,
 {
     /// Create a PCA9702 driver using a `core::cell::RefCell` as the mutex.
     ///
@@ -60,7 +63,7 @@ where
         {
             Self(
                 crate::PortMutex::create(Driver::new(bus)),
-                core::cell::RefCell::new(AsyncPortState::new()),
+                RefCell::new(AsyncPortState::new()),
             )
         }
 
@@ -89,18 +92,14 @@ where
 
     /// **Async** split: returns 8 async input pins plus an interrupt handler.
     ///
-    /// Unlike the synchronous [`split()`] method, this method does:
-    /// 1. An initial read via SPI to synchronize the driver’s internal async-state with reality.
-    /// 2. Returns [`PartsAsync`] containing:
-    ///    - 8 asynchronous pins, each implementing [`embedded_hal_async::digital::Wait`].
-    ///    - An [`InterruptHandler`] to call from your real hardware ISR to wake any waiting tasks.
-    /// # Errors
-    /// Returns a bus error if the initial SPI read fails.
+    /// 1. Reads the device once to sync `AsyncPortState` with the real pin values.
+    /// 2. Returns [`PartsAsync`] with `PinAsync` plus an [`InterruptHandler`].
+    ///
+    /// You must call `.handle_interrupts()` from your hardware ISR to wake any tasks
+    /// that are waiting on pin changes.
     #[cfg(feature = "async")]
-    pub fn split_async<'a>(
-        &'a mut self,
-    ) -> Result<PartsAsync<'a, B, M>, B::BusError> {
-        // Perform an initial read so the async state doesn't see a "spurious edge" later.
+    pub fn split_async<'a>(&'a mut self) -> Result<PartsAsync<'a, B, M>, B::BusError> {
+        // Perform an initial read so the async state doesn't see a spurious edge
         let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
         self.1.borrow_mut().last_known_state = initial_state;
 
@@ -113,6 +112,7 @@ where
             in5: PinAsync::new(Pin::new(5, &self.0), &self.1, 5),
             in6: PinAsync::new(Pin::new(6, &self.0), &self.1, 6),
             in7: PinAsync::new(Pin::new(7, &self.0), &self.1, 7),
+
             interrupts: InterruptHandler::new(&self.0, &self.1),
         })
     }
@@ -150,8 +150,7 @@ where
     pub in6: PinAsync<'a, crate::mode::Input, M>,
     pub in7: PinAsync<'a, crate::mode::Input, M>,
 
-    /// Must be called from your real hardware interrupt to wake tasks that are waiting.
-    /// This is how the asynchronous wait logic is driven.
+    /// Must be called from your real hardware interrupt to wake tasks.
     pub interrupts: InterruptHandler<'a, M>,
 }
 
@@ -166,10 +165,10 @@ impl<B> Driver<B> {
     }
 }
 
-/// Trait for the underlying PCA9702 SPI bus.  
-/// PCA9702 is read-only (for inputs) with no registers, so `read_inputs()` is the only method.
+/// Trait for the underlying PCA9702 SPI bus (no registers, read-only).
 pub trait Pca9702BusTrait {
     type BusError;
+
     /// Reads 8 bits from the device (bits [in7..in0]).
     fn read_inputs(&mut self) -> Result<u8, Self::BusError>;
 }
@@ -187,10 +186,8 @@ impl<B: Pca9702BusTrait> PortDriver for Driver<B> {
         panic!("PCA9702 is input-only, cannot read back output states");
     }
 
-    /// Reads the actual input bits from the device.
-    /// `mask_high` bits are tested for “is the input high?”  
-    /// `mask_low` bits are tested for “is the input low?”  
-    /// The returned integer has `1`s in the positions that match.
+    /// Reads input bits from the device. Bits that are high => `(val & mask_high)`,
+    /// bits that are low => `(!val & mask_low)`.
     fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
         let val = self.bus.read_inputs()? as u32;
         Ok((val & mask_high) | (!val & mask_low))
