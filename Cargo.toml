@@ -13,7 +13,6 @@ version = "0.6.5"
 edition = "2021"
 
 [features]
-default = ["async"]
 std = []
 async = ["embedded-hal-async", "heapless"]
 

@@ -11,42 +11,26 @@
 //! `AsyncPortState`. For example, wrap it (and the driver) in a critical-section
 //! or the same mutex. Failing to do so can cause runtime panics in no-std.
 
-#[cfg(feature = "async")]
-use core::cell::RefCell;
-#[cfg(feature = "async")]
-use core::future::Future;
-#[cfg(feature = "async")]
-use core::pin::Pin;
-#[cfg(feature = "async")]
-use core::sync::atomic::{AtomicU16, Ordering};
-#[cfg(feature = "async")]
-use core::task::{Context, Poll, Waker};
-
-#[cfg(feature = "async")]
-use heapless::Vec;
-
-#[cfg(feature = "async")]
 use crate::common::PortDriver;
-#[cfg(feature = "async")]
 use crate::mode::HasInput;
-#[cfg(feature = "async")]
 use crate::mutex::PortMutex;
-#[cfg(feature = "async")]
 use crate::pin::{Pin as SyncPin, PinError};
-#[cfg(feature = "async")]
+use core::cell::RefCell;
+use core::future::Future;
+use core::pin::Pin;
+use core::sync::atomic::{AtomicU16, Ordering};
+use core::task::{Context, Poll, Waker};
 use embedded_hal::digital::ErrorType;
-#[cfg(feature = "async")]
 use embedded_hal_async::digital::Wait;
+use heapless::Vec;
 
 /// Maximum number of tasks that can wait on a single pin's events.
 /// Increase this if you expect more concurrency.
-#[cfg(feature = "async")]
 pub const MAX_WAKERS_PER_PIN: usize = 4;
 
 static NEXT_WAITER_ID: AtomicU16 = AtomicU16::new(1);
 
 /// Conditions for which a future might be waiting.
-#[cfg(feature = "async")]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum WaitCondition {
     High,
@@ -76,8 +60,8 @@ impl WaitCondition {
         let falling = was_high && !is_high;
 
         match self {
-            WaitCondition::High => is_high,        // for an immediate "becomes high" check
-            WaitCondition::Low => !is_high,        // for an immediate "becomes low" check
+            WaitCondition::High => is_high, // for an immediate "becomes high" check
+            WaitCondition::Low => !is_high, // for an immediate "becomes low" check
             WaitCondition::RisingEdge => rising,
             WaitCondition::FallingEdge => falling,
             WaitCondition::AnyEdge => rising || falling,
@@ -86,7 +70,6 @@ impl WaitCondition {
 }
 
 /// A wait registration for one task: which condition is awaited and the task's waker.
-#[cfg(feature = "async")]
 #[derive(Debug)]
 struct PinWaiter {
     id: u16,
@@ -97,13 +80,11 @@ struct PinWaiter {
 /// Shared, interrupt-driven async state for a single port-expander chip.
 /// - Tracks last-known state (bitmask) of up to 32 pins
 /// - Maintains waker lists for each pin
-#[cfg(feature = "async")]
 pub struct AsyncPortState {
     pub last_known_state: u32,
     waiters: [Vec<PinWaiter, MAX_WAKERS_PER_PIN>; 32],
 }
 
-#[cfg(feature = "async")]
 impl AsyncPortState {
     pub fn new() -> Self {
         Self {
@@ -122,7 +103,6 @@ impl Default for AsyncPortState {
 /// Use this in your actual interrupt routine. It compares the new pin states
 /// vs. the old, wakes any tasks that match the changes, and updates
 /// `last_known_state`.
-#[cfg(feature = "async")]
 pub struct InterruptHandler<'a, M>
 where
     M: PortMutex,
@@ -132,7 +112,6 @@ where
     async_state: &'a RefCell<AsyncPortState>,
 }
 
-#[cfg(feature = "async")]
 impl<'a, M> InterruptHandler<'a, M>
 where
     M: PortMutex,
@@ -193,7 +172,6 @@ where
 }
 
 /// Asynchronous pin object implementing [`embedded_hal_async::digital::Wait`].
-#[cfg(feature = "async")]
 pub struct PinAsync<'a, MODE, M>
 where
     MODE: HasInput,
@@ -210,7 +188,6 @@ where
     pin_index: u8,
 }
 
-#[cfg(feature = "async")]
 impl<'a, MODE, M> PinAsync<'a, MODE, M>
 where
     MODE: HasInput,
@@ -242,7 +219,6 @@ where
     }
 }
 
-#[cfg(feature = "async")]
 impl<'a, MODE, M> ErrorType for PinAsync<'a, MODE, M>
 where
     MODE: HasInput,
@@ -253,7 +229,6 @@ where
     type Error = PinError<<M::Port as PortDriver>::Error>;
 }
 
-#[cfg(feature = "async")]
 impl<'a, MODE, M> Wait for PinAsync<'a, MODE, M>
 where
     MODE: HasInput,
@@ -266,7 +241,9 @@ where
         if self.is_high()? {
             return Ok(());
         }
-        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::High).await.unwrap();
+        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::High)
+            .await
+            .expect("Infallible");
         Ok(())
     }
 
@@ -274,22 +251,30 @@ where
         if self.is_low()? {
             return Ok(());
         }
-        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::Low).await.unwrap();
+        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::Low)
+            .await
+            .expect("Infallible");
         Ok(())
     }
 
     async fn wait_for_rising_edge(&mut self) -> Result<(), Self::Error> {
-        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::RisingEdge).await.unwrap();
+        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::RisingEdge)
+            .await
+            .expect("Infallible");
         Ok(())
     }
 
     async fn wait_for_falling_edge(&mut self) -> Result<(), Self::Error> {
-        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::FallingEdge).await.unwrap();
+        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::FallingEdge)
+            .await
+            .expect("Infallible");
         Ok(())
     }
 
     async fn wait_for_any_edge(&mut self) -> Result<(), Self::Error> {
-        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::AnyEdge).await.unwrap();
+        WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::AnyEdge)
+            .await
+            .expect("Infallible");
         Ok(())
     }
 }
@@ -301,7 +286,6 @@ where
 /// **Level conditions** will short‐circuit if the current known state is already
 /// satisfied, otherwise they wait for the next time the interrupt handler sees
 /// that pin become that level (which is effectively a “level or edge”).
-#[cfg(feature = "async")]
 struct WaitForCondition<'s> {
     pin_index: u8,
     async_state: &'s RefCell<AsyncPortState>,
@@ -314,7 +298,6 @@ struct WaitForCondition<'s> {
     done: bool,
 }
 
-#[cfg(feature = "async")]
 impl<'s> WaitForCondition<'s> {
     fn new(
         pin_index: u8,
@@ -335,7 +318,6 @@ impl<'s> WaitForCondition<'s> {
     }
 }
 
-#[cfg(feature = "async")]
 impl<'s> Future for WaitForCondition<'s> {
     // Once we've performed the initial synchronous check, no more I/O occurs in poll(),
     // so we can't produce a bus error. We use `PinError<core::convert::Infallible>`.
@@ -407,7 +389,6 @@ impl<'s> Future for WaitForCondition<'s> {
     }
 }
 
-#[cfg(feature = "async")]
 impl<'s> Drop for WaitForCondition<'s> {
     /// If the future is dropped before it is satisfied, remove from the list (if present).
     fn drop(&mut self) {

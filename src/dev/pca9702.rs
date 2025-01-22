@@ -1,6 +1,6 @@
 //! Support for the `PCA9702` "8-Bit Input-Only Expander with SPI"
 //!
-//! Datasheet: <https://www.nxp.com/docs/en/data-sheet/PCA9701_PCA9702.pdf>
+//! Datasheet: https://www.nxp.com/docs/en/data-sheet/PCA9701_PCA9702.pdf
 //!
 //! The PCA9702 offers eight input pins, with an interrupt output that can be asserted when
 //! one or more of the inputs change state (enabled via the `INT_EN` pin). The device reads
@@ -15,10 +15,9 @@ use crate::{Pin, PortDriver, SpiBus};
 use embedded_hal::spi::Operation;
 
 #[cfg(feature = "async")]
-use core::cell::RefCell;
-
-#[cfg(feature = "async")]
 use crate::pin_async::{AsyncPortState, InterruptHandler, PinAsync};
+#[cfg(feature = "async")]
+use core::cell::RefCell;
 
 /// An 8-bit input-only expander with SPI, based on the PCA9702.
 ///
@@ -165,36 +164,37 @@ impl<B> Driver<B> {
     }
 }
 
-/// Trait for the underlying PCA9702 SPI bus (no registers, read-only).
+/// Trait for the underlying PCA9702 SPI bus. Simpler than e.g. MCP23S17
+/// because PCA9702 is read-only and has no register-based protocol.
 pub trait Pca9702BusTrait {
     type BusError;
 
-    /// Reads 8 bits from the device (bits [in7..in0]).
+    /// Reads 8 bits from the device (which represent the state of inputs [in7..in0])
     fn read_inputs(&mut self) -> Result<u8, Self::BusError>;
 }
 
 impl<B: Pca9702BusTrait> PortDriver for Driver<B> {
+    /// Our `Error` is a custom enum wrapping both bus errors and an unsupported-ops error.
     type Error = B::BusError;
 
-    /// PCA9702 is input-only, so return an error.
+    /// PCA9702 is input-only, return an error here.
     fn set(&mut self, _mask_high: u32, _mask_low: u32) -> Result<(), Self::Error> {
         panic!("PCA9702 is input-only, cannot set output states");
     }
 
-    /// PCA9702 is input-only, so return an error.
+    /// PCA9702 is input-only, return an error here.
     fn is_set(&mut self, _mask_high: u32, _mask_low: u32) -> Result<u32, Self::Error> {
         panic!("PCA9702 is input-only, cannot read back output states");
     }
 
-    /// Reads input bits from the device. Bits that are high => `(val & mask_high)`,
-    /// bits that are low => `(!val & mask_low)`.
+    /// Read the actual input bits from the PCA9702 device
     fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
         let val = self.bus.read_inputs()? as u32;
         Ok((val & mask_high) | (!val & mask_low))
     }
 }
 
-/// Bus wrapper for PCA9702, implementing the trait that knows how to do the read.
+/// Bus wrapper type for PCA9702, implementing `Pca9702BusTrait`.
 pub struct Pca9702Bus<SPI>(pub SPI);
 
 impl<SPI> Pca9702BusTrait for Pca9702Bus<SPI>
@@ -204,13 +204,14 @@ where
     type BusError = SPI::BusError;
 
     fn read_inputs(&mut self) -> Result<u8, Self::BusError> {
-        // PCA9702 wants 8 SCLK rising edges to shift out the 8 input bits on SDOUT.
-        // The first rising edge also latches the input states. We'll just do
-        // a single TransferInPlace of one byte.
+        // PCA9702 wants a total of 8 SCLK rising edges to shift out the input data
+        // from SDOUT: The first rising edge latches the inputs, the next 8 edges
+        // shift them out.
         let mut buffer = [0u8];
         let mut ops = [Operation::TransferInPlace(&mut buffer)];
         self.0.transaction(&mut ops)?;
-        // Now buffer[0] contains [in7..in0].
+
+        // buffer[0] now holds bits [in7..in0]
         Ok(buffer[0])
     }
 }
@@ -240,8 +241,9 @@ mod tests {
         let mut pca = Pca9702::new(spi_mock.clone());
         let pins = pca.split();
 
-        // 0xA5 = 0b1010_0101 => in0=1, in1=0, in2=1, in3=0, in4=0, in5=1, in6=0, in7=1
-        assert_eq!(pins.in0.is_high().unwrap(), true); // LSB
+        // For each call, the driver re-reads from SPI, returning 0xA5 each time.
+        // 0xA5 = 0b10100101 => in0=1, in1=0, in2=1, in3=0, in4=0, in5=1, in6=0, in7=1
+        assert_eq!(pins.in0.is_high().unwrap(), true); // LSB => 1
         assert_eq!(pins.in1.is_high().unwrap(), false);
         assert_eq!(pins.in2.is_high().unwrap(), true);
 
