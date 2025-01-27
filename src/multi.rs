@@ -207,7 +207,6 @@ mod tests {
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::transfer_in_place(vec![0], vec![0b10101010]),
             mock_spi::Transaction::transaction_end(),
-
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::transfer_in_place(vec![0], vec![0b10101010]),
             mock_spi::Transaction::transaction_end(),
