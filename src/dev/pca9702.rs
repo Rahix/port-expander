@@ -14,16 +14,6 @@
 use crate::{PortDriver, SpiBus};
 use embedded_hal::spi::Operation;
 
-/// Error type for PCA9702 driver.
-/// We wrap both bus errors and "unsupported operation" errors here.
-#[derive(Debug)]
-pub enum Pca9702Error<E> {
-    /// Underlying SPI bus error
-    Bus(E),
-    /// Called an output-only function on an input-only device
-    OutputNotSupported,
-}
-
 /// An 8-bit input-only expander with SPI, based on the PCA9702.
 pub struct Pca9702<M>(M);
 
@@ -101,21 +91,21 @@ pub trait Pca9702BusTrait {
 
 impl<B: Pca9702BusTrait> PortDriver for Driver<B> {
     /// Our `Error` is a custom enum wrapping both bus errors and an unsupported-ops error.
-    type Error = Pca9702Error<B::BusError>;
+    type Error = B::BusError;
 
     /// PCA9702 is input-only, return an error here.
     fn set(&mut self, _mask_high: u32, _mask_low: u32) -> Result<(), Self::Error> {
-        Err(Pca9702Error::OutputNotSupported)
+        panic!("PCA9702 is input-only, cannot set output states");
     }
 
     /// PCA9702 is input-only, return an error here.
     fn is_set(&mut self, _mask_high: u32, _mask_low: u32) -> Result<u32, Self::Error> {
-        Err(Pca9702Error::OutputNotSupported)
+        panic!("PCA9702 is input-only, cannot read back output states");
     }
 
     /// Read the actual input bits from the PCA9702 device
     fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
-        let val = self.bus.read_inputs().map_err(Pca9702Error::Bus)? as u32;
+        let val = self.bus.read_inputs()? as u32;
         Ok((val & mask_high) | (!val & mask_low))
     }
 }
@@ -163,8 +153,8 @@ mod tests {
             SpiTransaction::transfer_in_place(vec![0], vec![0xA5]),
             SpiTransaction::transaction_end(),
         ];
-        let spi_mock = SpiMock::new(&expectations);
-        let mut pca = Pca9702::new(spi_mock);
+        let mut spi_mock = SpiMock::new(&expectations);
+        let mut pca = Pca9702::new(spi_mock.clone());
         let pins = pca.split();
 
         // For each call, the driver re-reads from SPI, returning 0xA5 each time.
@@ -173,22 +163,18 @@ mod tests {
         assert_eq!(pins.in1.is_high().unwrap(), false);
         assert_eq!(pins.in2.is_high().unwrap(), true);
 
-        // Finally, consume the mock:
-        let mut spi = pca.0.into_inner().bus.0;
-        spi.done();
+        spi_mock.done();
     }
 
     #[test]
+    #[should_panic]
     fn pca9702_output_fails() {
         let spi_mock = SpiMock::new(&[]);
-        let pca = Pca9702::new(spi_mock);
+        let mut pca = Pca9702::new(spi_mock);
+        let pins = pca.split();
 
-        let err = pca.0.borrow_mut().set(0x01, 0).unwrap_err();
-        match err {
-            Pca9702Error::OutputNotSupported => {}
-            _ => panic!("Expected OutputNotSupported error"),
-        }
-        let mut spi = pca.0.into_inner().bus.0;
-        spi.done();
+        pins.in0.access_port_driver(|drv| {
+            drv.set(0x01, 0x00).unwrap_err();
+        });
     }
 }
