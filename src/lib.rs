@@ -34,6 +34,7 @@
 //! - [`PCA9536`](Pca9536)
 //! - [`PCA9538`](Pca9538)
 //! - [`PCA9555`](Pca9555)
+//! - [`PCA9702`](Pca9702)
 //! - [`PCF8574A`](Pcf8574a)
 //! - [`PCF8574`](Pcf8574)
 //! - [`PCF8575`](Pcf8575)
@@ -86,6 +87,7 @@ pub use dev::mcp23x17::Mcp23x17;
 pub use dev::pca9536::Pca9536;
 pub use dev::pca9538::Pca9538;
 pub use dev::pca9555::Pca9555;
+pub use dev::pca9702::Pca9702;
 pub use dev::pcal6408a::Pcal6408a;
 pub use dev::pcal6416a::Pcal6416a;
 pub use dev::pcf8574::Pcf8574;
