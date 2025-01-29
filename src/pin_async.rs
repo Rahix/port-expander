@@ -12,9 +12,10 @@
 //! or the same mutex. Failing to do so can cause runtime panics in no-std.
 
 use crate::common::PortDriver;
-use crate::mode::HasInput;
+use crate::mode::{HasInput, Input, Output, QuasiBidirectional};
 use crate::mutex::PortMutex;
 use crate::pin::{Pin as SyncPin, PinError};
+use crate::PortDriverTotemPole;
 use core::cell::RefCell;
 use core::future::Future;
 use core::pin::Pin;
@@ -186,6 +187,27 @@ where
 
     /// Which pin index (0..31).
     pin_index: u8,
+}
+
+impl<'a, M> PinAsync<'a, QuasiBidirectional, M>
+where
+    M: PortMutex,
+    M::Port: PortDriver + PortDriverTotemPole,
+{
+    /// Convert this `PinAsync` (in QuasiBidirectional mode) into an **input** `PinAsync`.
+    pub fn into_input(
+        self,
+    ) -> Result<PinAsync<'a, Input, M>, PinError<<M::Port as PortDriver>::Error>> {
+        let pin_in = self.sync_pin.into_input()?;
+        Ok(PinAsync::new(pin_in, self.async_state, self.pin_index))
+    }
+
+    /// Convert this `PinAsync` (in QuasiBidirectional mode) into a **synchronous** output pin.
+    pub fn into_output(
+        self,
+    ) -> Result<crate::pin::Pin<'a, Output, M>, PinError<<M::Port as PortDriver>::Error>> {
+        self.sync_pin.into_output()
+    }
 }
 
 impl<'a, MODE, M> PinAsync<'a, MODE, M>
