@@ -44,7 +44,7 @@ where
         )
     }
 
-    pub fn split<'a>(&'a mut self) -> Parts<'a, I2C, M> {
+    pub fn split(&mut self) -> Parts<I2C, M> {
         Parts {
             io0: crate::Pin::new(0, &self.0),
             io1: crate::Pin::new(1, &self.0),
@@ -65,9 +65,9 @@ where
     /// You must call `.handle_interrupts()` from your hardware ISR
     /// to wake tasks waiting on pin changes.
     #[cfg(feature = "async")]
-    pub fn split_async<'a>(
-        &'a mut self,
-    ) -> Result<PartsAsync<'a, I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
+    pub fn split_async(
+        &mut self,
+    ) -> Result<PartsAsync<I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
         // Read once so the async state won't see a spurious edge
         let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
         self.1.borrow_mut().last_known_state = initial_state;
@@ -115,9 +115,9 @@ where
 
     /// Async split, same as Pca9554 but for the 'A' variant.
     #[cfg(feature = "async")]
-    pub fn split_async<'a>(
-        &'a mut self,
-    ) -> Result<PartsAsync<'a, I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
+    pub fn split_async(
+        &mut self,
+    ) -> Result<PartsAsync<I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
         let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
         self.1.borrow_mut().last_known_state = initial_state;
 
@@ -214,8 +214,7 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     fn set(&mut self, mask_high: u32, mask_low: u32) -> Result<(), Self::Error> {
         self.out |= mask_high as u8;
         self.out &= !mask_low as u8;
-        self.i2c
-            .write_reg(self.addr, Regs::OutputPort0, (self.out & 0xFF) as u8)?;
+        self.i2c.write_reg(self.addr, Regs::OutputPort0, self.out)?;
         Ok(())
     }
 
@@ -273,12 +272,8 @@ impl<I2C: crate::I2cBus> crate::PortDriverPolarity for Driver<I2C> {
             true => (mask as u8, 0),
         };
 
-        self.i2c.update_reg(
-            self.addr,
-            Regs::PolarityInversion0,
-            (mask_set & 0xFF) as u8,
-            (mask_clear & 0xFF) as u8,
-        )?;
+        self.i2c
+            .update_reg(self.addr, Regs::PolarityInversion0, mask_set, mask_clear)?;
         Ok(())
     }
 }
