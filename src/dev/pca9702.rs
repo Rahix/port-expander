@@ -33,19 +33,12 @@ pub struct Pca9702<M>(
     /// Internal asynchronous state (used only if you call `split_async()`).
     #[cfg(feature = "async")]
     pub RefCell<AsyncPortState>,
-    // If the "async" feature is not enabled, we simply don't store any
-    // extra field. For build consistency, let's conditionalize it:
-    #[cfg(not(feature = "async"))] (),
 );
 
 impl<SPI> Pca9702<core::cell::RefCell<Driver<Pca9702Bus<SPI>>>>
 where
     SPI: SpiBus,
 {
-    /// Create a PCA9702 driver using a `core::cell::RefCell` as the mutex.
-    ///
-    /// This is the simplest constructor for no-std usage. If you'd prefer a different
-    /// mutex type, call the low-level [`with_mutex()`] constructor.
     pub fn new(bus: SPI) -> Self {
         Self::with_mutex(Pca9702Bus(bus))
     }
@@ -56,20 +49,14 @@ where
     B: Pca9702BusTrait,
     M: crate::PortMutex<Port = Driver<B>>,
 {
-    /// Create a PCA9702 driver with a user-supplied mutex type, e.g. a critical-section mutex or a std mutex.
+    /// Create a PCA9702 driver with a user-supplied mutex type.
     pub fn with_mutex(bus: B) -> Self {
-        #[cfg(feature = "async")]
         {
             Self(
                 crate::PortMutex::create(Driver::new(bus)),
+                #[cfg(feature = "async")]
                 RefCell::new(AsyncPortState::new()),
             )
-        }
-
-        #[cfg(not(feature = "async"))]
-        {
-            // If async is disabled, there's no second field
-            Self(crate::PortMutex::create(Driver::new(bus)), ())
         }
     }
 
