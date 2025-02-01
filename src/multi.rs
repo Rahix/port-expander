@@ -113,6 +113,48 @@ where
     Ok(ret)
 }
 
+pub fn fetch_pin_change<PD, MUTEX, MODE: crate::mode::HasInput, const N: usize>(
+    pins: [&crate::Pin<'_, MODE, MUTEX>; N],
+) -> Result<[bool; N], PD::Error>
+where
+    PD: crate::PortDriver + crate::PortDriverIrqChange,
+    MUTEX: crate::PortMutex<Port = PD>,
+{
+    let port_driver = pins[0].port_driver();
+    let mask_in = port_driver.lock(|drv| drv.fetch_interrupt_changed())?;
+
+    let mut ret = [false; N];
+    for (pin, state) in pins.iter().zip(ret.iter_mut()) {
+        assert!(core::ptr::eq(pin.port_driver(), port_driver));
+        *state = mask_in & pin.pin_mask() != 0;
+    }
+
+    Ok(ret)
+}
+
+pub fn fetch_interrupt_state<PD, MUTEX, MODE: crate::mode::HasInput, const N: usize>(
+    pins: [&crate::Pin<'_, MODE, MUTEX>; N],
+) -> Result<[Option<bool>; N], PD::Error>
+where
+    PD: crate::PortDriver + crate::PortDriverIrqState,
+    MUTEX: crate::PortMutex<Port = PD>,
+{
+    let port_driver = pins[0].port_driver();
+    let (mask_changed, mask_state) = port_driver.lock(|drv| drv.fetch_interrupt_state())?;
+
+    let mut ret = [None; N];
+    for (pin, state) in pins.iter().zip(ret.iter_mut()) {
+        assert!(core::ptr::eq(pin.port_driver(), port_driver));
+        *state = if mask_changed & pin.pin_mask() != 0 {
+            Some(mask_state & pin.pin_mask() != 0)
+        } else {
+            None
+        };
+    }
+
+    Ok(ret)
+}
+
 #[cfg(test)]
 mod tests {
     use embedded_hal_mock::eh1::i2c as mock_i2c;
