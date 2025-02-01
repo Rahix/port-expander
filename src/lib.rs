@@ -73,6 +73,9 @@ pub use multi::write_multiple;
 pub use mutex::PortMutex;
 pub use pin::Pin;
 
+#[cfg(feature = "async")]
+pub mod pin_async;
+
 pub(crate) use bus::I2cExt;
 pub(crate) use bus::SpiBus;
 pub(crate) use common::Direction;
