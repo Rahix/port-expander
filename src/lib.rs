@@ -72,6 +72,7 @@ pub use multi::read_multiple;
 pub use multi::write_multiple;
 pub use mutex::PortMutex;
 pub use pin::Pin;
+pub use pin::PinError;
 
 pub(crate) use bus::I2cExt;
 pub(crate) use bus::SpiBus;
