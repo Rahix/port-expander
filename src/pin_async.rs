@@ -21,7 +21,7 @@ use core::future::Future;
 use core::pin::Pin;
 use core::sync::atomic::{AtomicU16, Ordering};
 use core::task::{Context, Poll, Waker};
-use embedded_hal::digital::ErrorType;
+use embedded_hal::digital::{ErrorType, InputPin};
 use embedded_hal_async::digital::Wait;
 use heapless::Vec;
 
@@ -229,14 +229,20 @@ where
             pin_index,
         }
     }
+}
 
-    /// Check synchronously if this pin is currently high.
-    pub fn is_high(&self) -> Result<bool, PinError<<M::Port as PortDriver>::Error>> {
+impl<'a, MODE, M> InputPin for PinAsync<'a, MODE, M>
+where
+    MODE: HasInput,
+    M: PortMutex,
+    M::Port: PortDriver,
+    <M::Port as PortDriver>::Error: core::fmt::Debug,
+{
+    fn is_high(&mut self) -> Result<bool, Self::Error> {
         self.sync_pin.is_high()
     }
 
-    /// Check synchronously if this pin is currently low.
-    pub fn is_low(&self) -> Result<bool, PinError<<M::Port as PortDriver>::Error>> {
+    fn is_low(&mut self) -> Result<bool, Self::Error> {
         self.sync_pin.is_low()
     }
 }

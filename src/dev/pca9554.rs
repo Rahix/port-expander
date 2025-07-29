@@ -66,8 +66,8 @@ where
     /// to wake tasks waiting on pin changes.
     #[cfg(feature = "async")]
     pub fn split_async(
-        &mut self,
-    ) -> Result<PartsAsync<I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
+        &'_ mut self,
+    ) -> Result<PartsAsync<'_, I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
         // Read once so the async state won't see a spurious edge
         let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
         self.1.borrow_mut().last_known_state = initial_state;
@@ -116,8 +116,8 @@ where
     /// Async split, same as Pca9554 but for the 'A' variant.
     #[cfg(feature = "async")]
     pub fn split_async(
-        &mut self,
-    ) -> Result<PartsAsync<I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
+        &'_ mut self,
+    ) -> Result<PartsAsync<'_, I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
         let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
         self.1.borrow_mut().last_known_state = initial_state;
 
