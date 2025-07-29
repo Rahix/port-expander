@@ -44,7 +44,7 @@ where
         )
     }
 
-    pub fn split(&mut self) -> Parts<I2C, M> {
+    pub fn split(&'_ mut self) -> Parts<'_, I2C, M> {
         Parts {
             io0: crate::Pin::new(0, &self.0),
             io1: crate::Pin::new(1, &self.0),
