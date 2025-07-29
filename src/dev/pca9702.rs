@@ -11,15 +11,33 @@
 //! configure directions. Consequently, calling methods that attempt to write or read back
 //! “set” states (e.g., `set()`, `is_set()`) will return an error.
 
-use crate::{PortDriver, SpiBus};
+use crate::{Pin, PortDriver, SpiBus};
 use embedded_hal::spi::Operation;
 
+#[cfg(feature = "async")]
+use crate::pin_async::{AsyncPortState, InterruptHandler, PinAsync};
+#[cfg(feature = "async")]
+use core::cell::RefCell;
+
 /// An 8-bit input-only expander with SPI, based on the PCA9702.
-pub struct Pca9702<M>(M);
+///
+/// Internally, this struct is a tuple:
+///
+/// - `.0` is your mutex-wrapped driver (`PortMutex<Driver<...>>`)
+/// - `.1` is an internal `RefCell<AsyncPortState>` used for optional async functionality
+///
+/// See [`split()`] for synchronous usage, or [`split_async()`] for async usage.
+pub struct Pca9702<M>(
+    /// The core driver behind a `PortMutex`, e.g. `RefCell<Driver<Pca9702Bus<SPI>>>`.
+    pub M,
+    /// Internal asynchronous state (used only if you call `split_async()`).
+    #[cfg(feature = "async")]
+    pub RefCell<AsyncPortState>,
+);
 
 impl<SPI> Pca9702<core::cell::RefCell<Driver<Pca9702Bus<SPI>>>>
 where
-    SPI: crate::SpiBus,
+    SPI: SpiBus,
 {
     pub fn new(bus: SPI) -> Self {
         Self::with_mutex(Pca9702Bus(bus))
@@ -33,40 +51,93 @@ where
 {
     /// Create a PCA9702 driver with a user-supplied mutex type.
     pub fn with_mutex(bus: B) -> Self {
-        Self(crate::PortMutex::create(Driver::new(bus)))
+        {
+            Self(
+                crate::PortMutex::create(Driver::new(bus)),
+                #[cfg(feature = "async")]
+                RefCell::new(AsyncPortState::new()),
+            )
+        }
     }
 
-    /// Split this device into its 8 input pins.
+    /// Split this device into its 8 input pins (synchronous usage).
     ///
     /// All pins are always configured as inputs on PCA9702 hardware.
     pub fn split(&mut self) -> Parts<'_, B, M> {
         Parts {
-            in0: crate::Pin::new(0, &self.0),
-            in1: crate::Pin::new(1, &self.0),
-            in2: crate::Pin::new(2, &self.0),
-            in3: crate::Pin::new(3, &self.0),
-            in4: crate::Pin::new(4, &self.0),
-            in5: crate::Pin::new(5, &self.0),
-            in6: crate::Pin::new(6, &self.0),
-            in7: crate::Pin::new(7, &self.0),
+            in0: Pin::new(0, &self.0),
+            in1: Pin::new(1, &self.0),
+            in2: Pin::new(2, &self.0),
+            in3: Pin::new(3, &self.0),
+            in4: Pin::new(4, &self.0),
+            in5: Pin::new(5, &self.0),
+            in6: Pin::new(6, &self.0),
+            in7: Pin::new(7, &self.0),
         }
+    }
+
+    /// **Async** split: returns 8 async input pins plus an interrupt handler.
+    ///
+    /// 1. Reads the device once to sync `AsyncPortState` with the real pin values.
+    /// 2. Returns [`PartsAsync`] with `PinAsync` plus an [`InterruptHandler`].
+    ///
+    /// You must call `.handle_interrupts()` from your hardware ISR to wake any tasks
+    /// that are waiting on pin changes.
+    #[cfg(feature = "async")]
+    pub fn split_async<'a>(&'a mut self) -> Result<PartsAsync<'a, B, M>, B::BusError> {
+        // Perform an initial read so the async state doesn't see a spurious edge
+        let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
+        self.1.borrow_mut().last_known_state = initial_state;
+
+        Ok(PartsAsync {
+            in0: PinAsync::new(Pin::new(0, &self.0), &self.1, 0),
+            in1: PinAsync::new(Pin::new(1, &self.0), &self.1, 1),
+            in2: PinAsync::new(Pin::new(2, &self.0), &self.1, 2),
+            in3: PinAsync::new(Pin::new(3, &self.0), &self.1, 3),
+            in4: PinAsync::new(Pin::new(4, &self.0), &self.1, 4),
+            in5: PinAsync::new(Pin::new(5, &self.0), &self.1, 5),
+            in6: PinAsync::new(Pin::new(6, &self.0), &self.1, 6),
+            in7: PinAsync::new(Pin::new(7, &self.0), &self.1, 7),
+
+            interrupts: InterruptHandler::new(&self.0, &self.1),
+        })
     }
 }
 
-/// Container for all 8 input pins on the PCA9702.
+/// Container for all 8 input pins on the PCA9702 (synchronous).
 pub struct Parts<'a, B, M = core::cell::RefCell<Driver<B>>>
 where
     B: Pca9702BusTrait,
     M: crate::PortMutex<Port = Driver<B>>,
 {
-    pub in0: crate::Pin<'a, crate::mode::Input, M>,
-    pub in1: crate::Pin<'a, crate::mode::Input, M>,
-    pub in2: crate::Pin<'a, crate::mode::Input, M>,
-    pub in3: crate::Pin<'a, crate::mode::Input, M>,
-    pub in4: crate::Pin<'a, crate::mode::Input, M>,
-    pub in5: crate::Pin<'a, crate::mode::Input, M>,
-    pub in6: crate::Pin<'a, crate::mode::Input, M>,
-    pub in7: crate::Pin<'a, crate::mode::Input, M>,
+    pub in0: Pin<'a, crate::mode::Input, M>,
+    pub in1: Pin<'a, crate::mode::Input, M>,
+    pub in2: Pin<'a, crate::mode::Input, M>,
+    pub in3: Pin<'a, crate::mode::Input, M>,
+    pub in4: Pin<'a, crate::mode::Input, M>,
+    pub in5: Pin<'a, crate::mode::Input, M>,
+    pub in6: Pin<'a, crate::mode::Input, M>,
+    pub in7: Pin<'a, crate::mode::Input, M>,
+}
+
+#[cfg(feature = "async")]
+/// The async version of `Parts`, with `PinAsync`s plus an [`InterruptHandler`].
+pub struct PartsAsync<'a, B, M>
+where
+    B: Pca9702BusTrait,
+    M: crate::PortMutex<Port = Driver<B>>,
+{
+    pub in0: PinAsync<'a, crate::mode::Input, M>,
+    pub in1: PinAsync<'a, crate::mode::Input, M>,
+    pub in2: PinAsync<'a, crate::mode::Input, M>,
+    pub in3: PinAsync<'a, crate::mode::Input, M>,
+    pub in4: PinAsync<'a, crate::mode::Input, M>,
+    pub in5: PinAsync<'a, crate::mode::Input, M>,
+    pub in6: PinAsync<'a, crate::mode::Input, M>,
+    pub in7: PinAsync<'a, crate::mode::Input, M>,
+
+    /// Must be called from your real hardware interrupt to wake tasks.
+    pub interrupts: InterruptHandler<'a, M>,
 }
 
 /// Internal driver struct for PCA9702.
