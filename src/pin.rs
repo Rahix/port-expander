@@ -290,3 +290,53 @@ where
         Pin::toggle(self)
     }
 }
+
+impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> Pin<'a, MODE, MUTEX>
+where
+    PD: crate::PortDriver + crate::PortDriverInterrupts,
+    MUTEX: crate::PortMutex<Port = PD>,
+{
+    pub fn fetch_all_interrupt_state(&self) -> Result<(), PD::Error> {
+        self.port_driver.lock(|drv| drv.fetch_interrupt_state())
+    }
+
+    pub fn query_pin_change(&mut self) -> bool {
+        self.port_driver
+            .lock(|drv| drv.query_pin_change(self.pin_mask) & self.pin_mask != 0)
+    }
+}
+
+impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> Pin<'a, MODE, MUTEX>
+where
+    PD: crate::PortDriver + crate::PortDriverIrqState,
+    MUTEX: crate::PortMutex<Port = PD>,
+{
+    pub fn query_interrupt_state(&mut self) -> Option<bool> {
+        self.port_driver.lock(|drv| {
+            let (mask_changed, mask_state) = drv.query_interrupt_state(self.pin_mask);
+            if mask_changed & self.pin_mask != 0 {
+                Some(mask_state & self.pin_mask != 0)
+            } else {
+                None
+            }
+        })
+    }
+}
+
+impl<'a, MODE: crate::mode::HasInput, MUTEX, PD> Pin<'a, MODE, MUTEX>
+where
+    PD: crate::PortDriver + crate::PortDriverIrqMask,
+    MUTEX: crate::PortMutex<Port = PD>,
+{
+    /// Add this pin to the interrupt mask of the port expander.
+    pub fn listen(&mut self) -> Result<(), PD::Error> {
+        self.port_driver
+            .lock(|drv| drv.set_interrupt_mask(self.pin_mask, 0))
+    }
+
+    /// Remove this pin from the interrupt mask of the port expander.
+    pub fn unlisten(&mut self) -> Result<(), PD::Error> {
+        self.port_driver
+            .lock(|drv| drv.set_interrupt_mask(0, self.pin_mask))
+    }
+}
