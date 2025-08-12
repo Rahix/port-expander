@@ -21,7 +21,6 @@ use core::future::Future;
 use core::pin::Pin;
 use core::sync::atomic::{AtomicU16, Ordering};
 use core::task::{Context, Poll, Waker};
-use embedded_hal::digital::{ErrorType, InputPin};
 use embedded_hal_async::digital::Wait;
 use heapless::Vec;
 
@@ -231,7 +230,7 @@ where
     }
 }
 
-impl<'a, MODE, M> InputPin for PinAsync<'a, MODE, M>
+impl<'a, MODE, M> embedded_hal::digital::InputPin for PinAsync<'a, MODE, M>
 where
     MODE: HasInput,
     M: PortMutex,
@@ -247,7 +246,7 @@ where
     }
 }
 
-impl<'a, MODE, M> ErrorType for PinAsync<'a, MODE, M>
+impl<'a, MODE, M> embedded_hal::digital::ErrorType for PinAsync<'a, MODE, M>
 where
     MODE: HasInput,
     M: PortMutex,
@@ -255,6 +254,22 @@ where
     <M::Port as PortDriver>::Error: core::fmt::Debug,
 {
     type Error = PinError<<M::Port as PortDriver>::Error>;
+}
+
+impl<'a, MODE, M> embedded_hal_async::digital::InputPin for PinAsync<'a, MODE, M>
+where
+    MODE: HasInput,
+    M: PortMutex,
+    M::Port: PortDriver,
+    <M::Port as PortDriver>::Error: core::fmt::Debug,
+{
+    async fn is_high(&mut self) -> Result<bool, Self::Error> {
+        self.sync_pin.is_high()
+    }
+
+    async fn is_low(&mut self) -> Result<bool, Self::Error> {
+        self.sync_pin.is_low()
+    }
 }
 
 impl<'a, MODE, M> Wait for PinAsync<'a, MODE, M>
@@ -266,7 +281,7 @@ where
 {
     async fn wait_for_high(&mut self) -> Result<(), Self::Error> {
         // If already high, return immediately
-        if self.is_high()? {
+        if <Self as embedded_hal::digital::InputPin>::is_high(self)? {
             return Ok(());
         }
         WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::High)
@@ -276,7 +291,7 @@ where
     }
 
     async fn wait_for_low(&mut self) -> Result<(), Self::Error> {
-        if self.is_low()? {
+        if <Self as embedded_hal::digital::InputPin>::is_low(self)? {
             return Ok(());
         }
         WaitForCondition::new(self.pin_index, self.async_state, WaitCondition::Low)
