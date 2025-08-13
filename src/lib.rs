@@ -83,6 +83,7 @@ pub(crate) use common::PortDriverPullDown;
 pub(crate) use common::PortDriverPullUp;
 pub(crate) use common::PortDriverTotemPole;
 
+pub use dev::ch422::Ch422;
 pub use dev::max7321::Max7321;
 pub use dev::mcp23x17::Mcp23x17;
 pub use dev::pca9536::Pca9536;
