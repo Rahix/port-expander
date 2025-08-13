@@ -3,6 +3,7 @@
 //! In most cases you will not need anything from here explicitly, the exposed types at the root of
 //! the crate should be enough.
 
+pub mod ch422;
 pub mod max7321;
 pub mod mcp23x17;
 pub mod pca9536;
