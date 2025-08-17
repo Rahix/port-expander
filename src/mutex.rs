@@ -33,6 +33,9 @@
 ///         let mut v = self.0.lock().unwrap();
 ///         f(&mut v)
 ///     }
+///     fn into_inner(self) -> Self::Port {
+///        self.0.into_inner().unwrap()
+///     }
 /// }
 /// ```
 pub trait PortMutex {
@@ -44,6 +47,8 @@ pub trait PortMutex {
 
     /// Lock the mutex and give a closure access to the port-expander inside.
     fn lock<R, F: FnOnce(&mut Self::Port) -> R>(&self, f: F) -> R;
+
+    fn into_inner(self) -> Self::Port;
 }
 
 impl<T> PortMutex for core::cell::RefCell<T> {
@@ -56,6 +61,10 @@ impl<T> PortMutex for core::cell::RefCell<T> {
     fn lock<R, F: FnOnce(&mut Self::Port) -> R>(&self, f: F) -> R {
         let mut v = self.borrow_mut();
         f(&mut v)
+    }
+
+    fn into_inner(self) -> Self::Port {
+        self.into_inner()
     }
 }
 
@@ -70,6 +79,9 @@ impl<T> PortMutex for std::sync::Mutex<T> {
     fn lock<R, F: FnOnce(&mut Self::Port) -> R>(&self, f: F) -> R {
         let mut v = self.lock().unwrap();
         f(&mut v)
+    }
+    fn into_inner(self) -> Self::Port {
+        self.into_inner().unwrap()
     }
 }
 
@@ -86,5 +98,9 @@ impl<T> PortMutex for critical_section::Mutex<core::cell::RefCell<T>> {
             let mut v = self.borrow_ref_mut(cs);
             f(&mut v)
         })
+    }
+
+    fn into_inner(self) -> Self::Port {
+        self.into_inner().into_inner()
     }
 }
