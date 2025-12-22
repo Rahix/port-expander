@@ -3,15 +3,13 @@ use crate::I2cExt;
 use crate::PortDriver;
 
 #[cfg(feature = "async")]
-use crate::pin_async::{AsyncPortState, InterruptHandler, PinAsync};
-#[cfg(feature = "async")]
-use core::cell::RefCell;
+use crate::pin_async::{AsyncPortState, AsyncPortStateMutex, InterruptHandler, PinAsync};
 
 /// `PCA9554` "8-bit I2C-bus and SMBus I/O port with interrupt"
-pub struct Pca9554<M>(pub M, #[cfg(feature = "async")] pub RefCell<AsyncPortState>);
+pub struct Pca9554<M>(pub M, #[cfg(feature = "async")] pub AsyncPortStateMutex);
 
 /// `PCA9554A` "8-bit I2C-bus and SMBus I/O port with interrupt"
-pub struct Pca9554A<M>(pub M, #[cfg(feature = "async")] pub RefCell<AsyncPortState>);
+pub struct Pca9554A<M>(pub M, #[cfg(feature = "async")] pub AsyncPortStateMutex);
 
 impl<I2C> Pca9554<core::cell::RefCell<Driver<I2C>>>
 where
@@ -40,7 +38,7 @@ where
         Self(
             crate::PortMutex::create(Driver::new(i2c, false, a0, a1, a2)),
             #[cfg(feature = "async")]
-            RefCell::new(AsyncPortState::new()),
+            AsyncPortState::new_mutex(),
         )
     }
 
@@ -70,7 +68,9 @@ where
     ) -> Result<PartsAsync<'_, I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
         // Read once so the async state won't see a spurious edge
         let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
-        self.1.borrow_mut().last_known_state = initial_state;
+        critical_section::with(|cs| {
+            self.1.borrow_ref_mut(cs).last_known_state = initial_state;
+        });
 
         Ok(PartsAsync {
             io0: PinAsync::new(crate::Pin::new(0, &self.0), &self.1, 0),
@@ -96,7 +96,7 @@ where
         Self(
             crate::PortMutex::create(Driver::new(i2c, true, a0, a1, a2)),
             #[cfg(feature = "async")]
-            RefCell::new(AsyncPortState::new()),
+            AsyncPortState::new_mutex(),
         )
     }
 
@@ -119,7 +119,9 @@ where
         &'_ mut self,
     ) -> Result<PartsAsync<'_, I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
         let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
-        self.1.borrow_mut().last_known_state = initial_state;
+        critical_section::with(|cs| {
+            self.1.borrow_ref_mut(cs).last_known_state = initial_state;
+        });
 
         Ok(PartsAsync {
             io0: PinAsync::new(crate::Pin::new(0, &self.0), &self.1, 0),

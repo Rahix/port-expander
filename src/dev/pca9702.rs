@@ -15,16 +15,14 @@ use crate::{Pin, PortDriver, SpiBus};
 use embedded_hal::spi::Operation;
 
 #[cfg(feature = "async")]
-use crate::pin_async::{AsyncPortState, InterruptHandler, PinAsync};
-#[cfg(feature = "async")]
-use core::cell::RefCell;
+use crate::pin_async::{AsyncPortState, AsyncPortStateMutex, InterruptHandler, PinAsync};
 
 /// An 8-bit input-only expander with SPI, based on the PCA9702.
 ///
 /// Internally, this struct is a tuple:
 ///
 /// - `.0` is your mutex-wrapped driver (`PortMutex<Driver<...>>`)
-/// - `.1` is an internal `RefCell<AsyncPortState>` used for optional async functionality
+/// - `.1` is an internal `AsyncPortStateMutex` used for optional async functionality
 ///
 /// See [`split()`] for synchronous usage, or [`split_async()`] for async usage.
 pub struct Pca9702<M>(
@@ -32,7 +30,7 @@ pub struct Pca9702<M>(
     pub M,
     /// Internal asynchronous state (used only if you call `split_async()`).
     #[cfg(feature = "async")]
-    pub RefCell<AsyncPortState>,
+    pub AsyncPortStateMutex,
 );
 
 impl<SPI> Pca9702<core::cell::RefCell<Driver<Pca9702Bus<SPI>>>>
@@ -55,7 +53,7 @@ where
             Self(
                 crate::PortMutex::create(Driver::new(bus)),
                 #[cfg(feature = "async")]
-                RefCell::new(AsyncPortState::new()),
+                AsyncPortState::new_mutex(),
             )
         }
     }
@@ -87,7 +85,9 @@ where
     pub fn split_async<'a>(&'a mut self) -> Result<PartsAsync<'a, B, M>, B::BusError> {
         // Perform an initial read so the async state doesn't see a spurious edge
         let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
-        self.1.borrow_mut().last_known_state = initial_state;
+        critical_section::with(|cs| {
+            self.1.borrow_ref_mut(cs).last_known_state = initial_state;
+        });
 
         Ok(PartsAsync {
             in0: PinAsync::new(Pin::new(0, &self.0), &self.1, 0),

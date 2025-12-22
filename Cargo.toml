@@ -15,7 +15,7 @@ edition = "2021"
 [features]
 default = ["async"]
 std = []
-async = ["embedded-hal-async", "heapless"]
+async = ["embedded-hal-async", "heapless", "critical-section"]
 
 [dependencies]
 critical-section = { version = "1.1.2", optional = true }
