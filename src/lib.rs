@@ -74,6 +74,9 @@ pub use mutex::PortMutex;
 pub use pin::Pin;
 pub use pin::PinError;
 
+#[cfg(feature = "async")]
+pub mod pin_async;
+
 pub(crate) use bus::I2cExt;
 pub(crate) use bus::SpiBus;
 pub(crate) use common::Direction;

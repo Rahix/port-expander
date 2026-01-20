@@ -1,10 +1,15 @@
 //! Support for the `PCA9554` and `PCA9554a` "8-bit I2C-bus and SMBus I/O port with interrupt"
 use crate::I2cExt;
+use crate::PortDriver;
+
+#[cfg(feature = "async")]
+use crate::pin_async::{AsyncPortState, AsyncPortStateMutex, InterruptHandler, PinAsync};
 
 /// `PCA9554` "8-bit I2C-bus and SMBus I/O port with interrupt"
-pub struct Pca9554<M>(M);
+pub struct Pca9554<M>(pub M, #[cfg(feature = "async")] pub AsyncPortStateMutex);
+
 /// `PCA9554A` "8-bit I2C-bus and SMBus I/O port with interrupt"
-pub struct Pca9554A<M>(M);
+pub struct Pca9554A<M>(pub M, #[cfg(feature = "async")] pub AsyncPortStateMutex);
 
 impl<I2C> Pca9554<core::cell::RefCell<Driver<I2C>>>
 where
@@ -30,12 +35,14 @@ where
     M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C, a0: bool, a1: bool, a2: bool) -> Self {
-        Self(crate::PortMutex::create(Driver::new(
-            i2c, false, a0, a1, a2,
-        )))
+        Self(
+            crate::PortMutex::create(Driver::new(i2c, false, a0, a1, a2)),
+            #[cfg(feature = "async")]
+            AsyncPortState::new_mutex(),
+        )
     }
 
-    pub fn split<'a>(&'a mut self) -> Parts<'a, I2C, M> {
+    pub fn split(&'_ mut self) -> Parts<'_, I2C, M> {
         Parts {
             io0: crate::Pin::new(0, &self.0),
             io1: crate::Pin::new(1, &self.0),
@@ -47,6 +54,37 @@ where
             io7: crate::Pin::new(7, &self.0),
         }
     }
+
+    /// **Async** split: returns 8 async quasi-bidir pins plus an interrupt handler.
+    ///
+    /// 1. Performs an initial read to sync the `AsyncPortState`.
+    /// 2. Returns [`PartsAsync`] with `PinAsync`s and an [`InterruptHandler`].
+    ///
+    /// You must call `.handle_interrupts()` from your hardware ISR
+    /// to wake tasks waiting on pin changes.
+    #[cfg(feature = "async")]
+    pub fn split_async(
+        &'_ mut self,
+    ) -> Result<PartsAsync<'_, I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
+        // Read once so the async state won't see a spurious edge
+        let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
+        critical_section::with(|cs| {
+            self.1.borrow_ref_mut(cs).last_known_state = initial_state;
+        });
+
+        Ok(PartsAsync {
+            io0: PinAsync::new(crate::Pin::new(0, &self.0), &self.1, 0),
+            io1: PinAsync::new(crate::Pin::new(1, &self.0), &self.1, 1),
+            io2: PinAsync::new(crate::Pin::new(2, &self.0), &self.1, 2),
+            io3: PinAsync::new(crate::Pin::new(3, &self.0), &self.1, 3),
+            io4: PinAsync::new(crate::Pin::new(4, &self.0), &self.1, 4),
+            io5: PinAsync::new(crate::Pin::new(5, &self.0), &self.1, 5),
+            io6: PinAsync::new(crate::Pin::new(6, &self.0), &self.1, 6),
+            io7: PinAsync::new(crate::Pin::new(7, &self.0), &self.1, 7),
+
+            interrupts: InterruptHandler::new(&self.0, &self.1),
+        })
+    }
 }
 
 impl<I2C, M> Pca9554A<M>
@@ -55,7 +93,11 @@ where
     M: crate::PortMutex<Port = Driver<I2C>>,
 {
     pub fn with_mutex(i2c: I2C, a0: bool, a1: bool, a2: bool) -> Self {
-        Self(crate::PortMutex::create(Driver::new(i2c, true, a0, a1, a2)))
+        Self(
+            crate::PortMutex::create(Driver::new(i2c, true, a0, a1, a2)),
+            #[cfg(feature = "async")]
+            AsyncPortState::new_mutex(),
+        )
     }
 
     pub fn split(&mut self) -> Parts<'_, I2C, M> {
@@ -70,8 +112,33 @@ where
             io7: crate::Pin::new(7, &self.0),
         }
     }
+
+    /// Async split, same as Pca9554 but for the 'A' variant.
+    #[cfg(feature = "async")]
+    pub fn split_async(
+        &'_ mut self,
+    ) -> Result<PartsAsync<'_, I2C, M>, <Driver<I2C> as crate::PortDriver>::Error> {
+        let initial_state = self.0.lock(|drv| drv.get(0xFF, 0))?;
+        critical_section::with(|cs| {
+            self.1.borrow_ref_mut(cs).last_known_state = initial_state;
+        });
+
+        Ok(PartsAsync {
+            io0: PinAsync::new(crate::Pin::new(0, &self.0), &self.1, 0),
+            io1: PinAsync::new(crate::Pin::new(1, &self.0), &self.1, 1),
+            io2: PinAsync::new(crate::Pin::new(2, &self.0), &self.1, 2),
+            io3: PinAsync::new(crate::Pin::new(3, &self.0), &self.1, 3),
+            io4: PinAsync::new(crate::Pin::new(4, &self.0), &self.1, 4),
+            io5: PinAsync::new(crate::Pin::new(5, &self.0), &self.1, 5),
+            io6: PinAsync::new(crate::Pin::new(6, &self.0), &self.1, 6),
+            io7: PinAsync::new(crate::Pin::new(7, &self.0), &self.1, 7),
+
+            interrupts: InterruptHandler::new(&self.0, &self.1),
+        })
+    }
 }
 
+/// Container for all 8 pins (synchronous usage).
 pub struct Parts<'a, I2C, M = core::cell::RefCell<Driver<I2C>>>
 where
     I2C: crate::I2cBus,
@@ -85,6 +152,26 @@ where
     pub io5: crate::Pin<'a, crate::mode::QuasiBidirectional, M>,
     pub io6: crate::Pin<'a, crate::mode::QuasiBidirectional, M>,
     pub io7: crate::Pin<'a, crate::mode::QuasiBidirectional, M>,
+}
+
+#[cfg(feature = "async")]
+/// Container for all 8 pins in async form, plus the interrupt handler.
+pub struct PartsAsync<'a, I2C, M = core::cell::RefCell<Driver<I2C>>>
+where
+    I2C: crate::I2cBus,
+    M: crate::PortMutex<Port = Driver<I2C>>,
+{
+    pub io0: PinAsync<'a, crate::mode::QuasiBidirectional, M>,
+    pub io1: PinAsync<'a, crate::mode::QuasiBidirectional, M>,
+    pub io2: PinAsync<'a, crate::mode::QuasiBidirectional, M>,
+    pub io3: PinAsync<'a, crate::mode::QuasiBidirectional, M>,
+    pub io4: PinAsync<'a, crate::mode::QuasiBidirectional, M>,
+    pub io5: PinAsync<'a, crate::mode::QuasiBidirectional, M>,
+    pub io6: PinAsync<'a, crate::mode::QuasiBidirectional, M>,
+    pub io7: PinAsync<'a, crate::mode::QuasiBidirectional, M>,
+
+    /// Must be called from your real hardware interrupt to wake any waiting tasks.
+    pub interrupts: InterruptHandler<'a, M>,
 }
 
 #[allow(dead_code)]
@@ -109,17 +196,21 @@ pub struct Driver<I2C> {
 }
 
 impl<I2C> Driver<I2C> {
-    pub fn new(i2c: I2C, is_a_variant: bool, a0: bool, a1: bool, a2: bool) -> Self {
+    pub fn new(mut i2c: I2C, is_a_variant: bool, a0: bool, a1: bool, a2: bool) -> Self
+    where
+        I2C: crate::I2cBus,
+    {
         let addr = if is_a_variant {
             0x38 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8)
         } else {
             0x20 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8)
         };
-        Self {
-            i2c,
-            out: 0xff,
-            addr,
-        }
+        // Read actual output register to sync shadow with hardware state.
+        // This prevents warm-reset glitches where retained hardware state
+        // differs from the default shadow value (0xFF).
+        // On read failure, fall back to 0xFF (PCA9554A power-on default).
+        let out = i2c.read_reg(addr, Regs::OutputPort0).unwrap_or(0xff);
+        Self { i2c, out, addr }
     }
 }
 
@@ -129,8 +220,7 @@ impl<I2C: crate::I2cBus> crate::PortDriver for Driver<I2C> {
     fn set(&mut self, mask_high: u32, mask_low: u32) -> Result<(), Self::Error> {
         self.out |= mask_high as u8;
         self.out &= !mask_low as u8;
-        self.i2c
-            .write_reg(self.addr, Regs::OutputPort0, (self.out & 0xFF) as u8)?;
+        self.i2c.write_reg(self.addr, Regs::OutputPort0, self.out)?;
         Ok(())
     }
 
@@ -158,7 +248,6 @@ impl<I2C: crate::I2cBus> crate::PortDriverTotemPole for Driver<I2C> {
     ) -> Result<(), Self::Error> {
         // set state before switching direction to prevent glitch
         if dir == crate::Direction::Output {
-            use crate::PortDriver;
             if state {
                 self.set(mask, 0)?;
             } else {
@@ -189,12 +278,8 @@ impl<I2C: crate::I2cBus> crate::PortDriverPolarity for Driver<I2C> {
             true => (mask as u8, 0),
         };
 
-        self.i2c.update_reg(
-            self.addr,
-            Regs::PolarityInversion0,
-            (mask_set & 0xFF) as u8,
-            (mask_clear & 0xFF) as u8,
-        )?;
+        self.i2c
+            .update_reg(self.addr, Regs::PolarityInversion0, mask_set, mask_clear)?;
         Ok(())
     }
 }
@@ -206,6 +291,7 @@ mod tests {
     #[test]
     fn pca9554a() {
         let expectations = [
+            mock_i2c::Transaction::write_read(0x39, vec![0x01], vec![0xff]),
             // set pin0 low and then high
             mock_i2c::Transaction::write(0x39, vec![0x01, 0xfe]),
             mock_i2c::Transaction::write(0x39, vec![0x01, 0xff]),
@@ -240,6 +326,7 @@ mod tests {
     #[test]
     fn pca9554() {
         let expectations = [
+            mock_i2c::Transaction::write_read(0x21, vec![0x01], vec![0xff]),
             // set pin0 low and then high
             mock_i2c::Transaction::write(0x21, vec![0x01, 0xfe]),
             mock_i2c::Transaction::write(0x21, vec![0x01, 0xff]),
