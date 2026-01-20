@@ -196,17 +196,21 @@ pub struct Driver<I2C> {
 }
 
 impl<I2C> Driver<I2C> {
-    pub fn new(i2c: I2C, is_a_variant: bool, a0: bool, a1: bool, a2: bool) -> Self {
+    pub fn new(mut i2c: I2C, is_a_variant: bool, a0: bool, a1: bool, a2: bool) -> Self
+    where
+        I2C: crate::I2cBus,
+    {
         let addr = if is_a_variant {
             0x38 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8)
         } else {
             0x20 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8)
         };
-        Self {
-            i2c,
-            out: 0xff,
-            addr,
-        }
+        // Read actual output register to sync shadow with hardware state.
+        // This prevents warm-reset glitches where retained hardware state
+        // differs from the default shadow value (0xFF).
+        // On read failure, fall back to 0xFF (PCA9554A power-on default).
+        let out = i2c.read_reg(addr, Regs::OutputPort0).unwrap_or(0xff);
+        Self { i2c, out, addr }
     }
 }
 
@@ -287,6 +291,7 @@ mod tests {
     #[test]
     fn pca9554a() {
         let expectations = [
+            mock_i2c::Transaction::write_read(0x39, vec![0x01], vec![0xff]),
             // set pin0 low and then high
             mock_i2c::Transaction::write(0x39, vec![0x01, 0xfe]),
             mock_i2c::Transaction::write(0x39, vec![0x01, 0xff]),
@@ -321,6 +326,7 @@ mod tests {
     #[test]
     fn pca9554() {
         let expectations = [
+            mock_i2c::Transaction::write_read(0x21, vec![0x01], vec![0xff]),
             // set pin0 low and then high
             mock_i2c::Transaction::write(0x21, vec![0x01, 0xfe]),
             mock_i2c::Transaction::write(0x21, vec![0x01, 0xff]),
