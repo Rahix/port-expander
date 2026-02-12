@@ -60,6 +60,28 @@ pub trait PortDriverPullUp: PortDriver {
     fn set_pull_up(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error>;
 }
 
+pub trait PortDriverIrqChange: PortDriver {
+    /// Read which pins changed state since the last interrupt request.
+    ///
+    /// This method should reset the pin-change state such that a consecutive call does not report
+    /// the same pins again.
+    fn fetch_interrupt_changed(&mut self) -> Result<u32, Self::Error>;
+}
+
+pub trait PortDriverIrqState: PortDriver {
+    /// Read the state of pins at the last interrupt request.
+    ///
+    /// This method should reset the pin-change state such that a consecutive call does not report
+    /// the same pins again.
+    ///
+    /// The return value is a tuple of
+    ///
+    /// 1. The mask of pins that changed state (must be the same value that would have been
+    ///    reported by fetch_interrupt_changed())
+    /// 2. For the changed pins, the individual state that was latched at change time.
+    fn fetch_interrupt_state(&mut self) -> Result<(u32, u32), Self::Error>;
+}
+
 /// Pin Modes
 pub mod mode {
     /// Trait for pin-modes which can be used to set a logic level.
