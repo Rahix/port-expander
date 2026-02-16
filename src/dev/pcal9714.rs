@@ -10,28 +10,28 @@
 //!
 //! When passing 16-bit values to this driver, the upper byte corresponds to port
 //! B (pins 7..0) and the lower byte corresponds to port A (pins 7..0).
-use crate::I2cExt;
+use crate::{dev::pca9702::Pca9702Bus, I2cExt};
 
 /// `MCP23x17` "16-Bit I/O Expander with Serial Interface" with I2C or SPI interface
 pub struct PCAL9714<M>(M);
 
-impl<I2C> Mcp23x17<core::cell::RefCell<Driver<Mcp23017Bus<I2C>>>>
-where
-    I2C: crate::I2cBus,
-{
-    /// Create a new instance of the MCP23017 with I2C interface
-    pub fn new_mcp23017(bus: I2C, a0: bool, a1: bool, a2: bool) -> Self {
-        Self::with_mutex(Mcp23017Bus(bus), a0, a1, a2)
-    }
-}
+// impl<I2C> Mcp23x17<core::cell::RefCell<Driver<Mcp23017Bus<I2C>>>>
+// where
+//     I2C: crate::I2cBus,
+// {
+//     /// Create a new instance of the MCP23017 with I2C interface
+//     pub fn new_mcp23017(bus: I2C, a0: bool, a1: bool, a2: bool) -> Self {
+//         Self::with_mutex(Mcp23017Bus(bus), a0, a1, a2)
+//     }
+// }
 
-impl<SPI> PCAL9714<core::cell::RefCell<Driver<Mcp23S17Bus<SPI>>>>
+impl<SPI> PCAL9714<core::cell::RefCell<Driver<PCAL9714_Bus<SPI>>>>
 where
     SPI: crate::SpiBus,
 {
     /// Create a new instance of the MCP23S17 with SPI interface
     pub fn new_PCAL9714(bus: SPI) -> Self {
-        Self::with_mutex(Mcp23S17Bus(bus), false, false, false)
+        Self::with_mutex(PCAL9714_Bus(bus), false, false, false)
     }
 }
 
@@ -46,23 +46,20 @@ where
 
     pub fn split<'a>(&'a mut self) -> Parts<'a, B, M> {
         Parts {
-            // TODO: Add mine pins here
-            gpa0: crate::Pin::new(0, &self.0),
-            gpa1: crate::Pin::new(1, &self.0),
-            gpa2: crate::Pin::new(2, &self.0),
-            gpa3: crate::Pin::new(3, &self.0),
-            gpa4: crate::Pin::new(4, &self.0),
-            gpa5: crate::Pin::new(5, &self.0),
-            gpa6: crate::Pin::new(6, &self.0),
-            gpa7: crate::Pin::new(7, &self.0),
-            gpb0: crate::Pin::new(8, &self.0),
-            gpb1: crate::Pin::new(9, &self.0),
-            gpb2: crate::Pin::new(10, &self.0),
-            gpb3: crate::Pin::new(11, &self.0),
-            gpb4: crate::Pin::new(12, &self.0),
-            gpb5: crate::Pin::new(13, &self.0),
-            gpb6: crate::Pin::new(14, &self.0),
-            gpb7: crate::Pin::new(15, &self.0),
+            gp0_0: crate::Pin::new(0, &self.0),
+            gp0_1: crate::Pin::new(1, &self.0),
+            gp0_2: crate::Pin::new(2, &self.0),
+            gp0_3: crate::Pin::new(3, &self.0),
+            gp0_4: crate::Pin::new(4, &self.0),
+            gp0_5: crate::Pin::new(5, &self.0),
+            gp0_6: crate::Pin::new(6, &self.0),
+            gp0_7: crate::Pin::new(7, &self.0),
+            gp1_0: crate::Pin::new(8, &self.0),
+            gp1_1: crate::Pin::new(9, &self.0),
+            gp1_2: crate::Pin::new(10, &self.0),
+            gp1_3: crate::Pin::new(11, &self.0),
+            gp1_4: crate::Pin::new(12, &self.0),
+            gp1_5: crate::Pin::new(13, &self.0),
         }
     }
 }
@@ -72,23 +69,21 @@ where
     B: PCAL9714Bus,
     M: crate::PortMutex<Port = Driver<B>>,
 {
-    // TODO: new pins here
-    pub gpa0: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpa1: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpa2: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpa3: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpa4: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpa5: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpa6: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpa7: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpb0: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpb1: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpb2: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpb3: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpb4: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpb5: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpb6: crate::Pin<'a, crate::mode::Input, M>,
-    pub gpb7: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp0_0: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp0_1: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp0_2: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp0_3: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp0_4: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp0_5: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp0_6: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp0_7: crate::Pin<'a, crate::mode::Input, M>,
+
+    pub gp1_0: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp1_1: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp1_2: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp1_3: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp1_4: crate::Pin<'a, crate::mode::Input, M>,
+    pub gp1_5: crate::Pin<'a, crate::mode::Input, M>,
 }
 
 #[allow(dead_code)]
@@ -99,77 +94,43 @@ where
 /// For all registers, the reset value is 0x00, except for
 /// IODIR{A,B} which are 0xFF (making all pins inputs) at reset.
 enum Regs {
-    // TODO: new registers here
-    /// IODIR: input/output direction: 0=output; 1=input
-    IODIRA = 0x00,
-    /// IPOL: input polarity: 0=register values match input pins; 1=opposite
-    IPOLA = 0x02,
-    /// GPINTEN: interrupt-on-change: 0=disable; 1=enable
-    GPINTENA = 0x04,
-    /// DEFVAL: default values for interrupt-on-change
-    DEFVALA = 0x06,
-    /// INTCON: interrupt-on-change config: 0=compare to previous pin value;
-    ///   1=compare to corresponding bit in DEFVAL
-    INTCONA = 0x08,
-    /// IOCON: configuration register
-    /// - Pin 7: BANK (which driver assumes stays 0)
-    /// - Pin 6: MIRROR: if enabled, INT{A,B} are logically ORed; an interrupt on either
-    ///          port will cause both pins to activate
-    /// - Pin 5: SEQOP: controls the incrementing function of the address pointer
-    /// - Pin 4: DISSLW: disables slew rate control on SDA
-    /// - Pin 3: HAEN: no effect on MCP23017, enables address pins on MCP23S17
-    /// - Pin 2: ODR: interrupt pins are 0=active-driver outputs (INTPOL sets polarity)
-    ///          or 1=open-drain outputs (overrides INTPOL)
-    /// - Pin 1: INTPOL: interrupt pin is 0=active-low or 1=active-high
-    /// - Pin 0: unused
-    IOCONA = 0x0a,
-    /// GPPU: GPIO pull-ups: enables weak internal pull-ups on each pin (when configured
-    ///   as an input)
-    GPPUA = 0x0c,
-    /// INTF: interrupt flags: 0=no interrupt pending; 1=corresponding pin caused interrupt
-    INTFA = 0x0e,
-    /// INTCAP: interrupt captured value: reflects value of each pin at the time that they
-    ///   caused an interrupt
-    INTCAPA = 0x10,
-    /// GPIO: reflects logic level on pins
-    GPIOA = 0x12,
-    /// OLAT: output latches: sets state for pins configured as outputs
-    OLATA = 0x14,
-    /// IODIR: input/output direction: 0=output; 1=input
-    IODIRB = 0x01,
-    /// IPOL: input polarity: 0=register values match input pins; 1=opposite
-    IPOLB = 0x03,
-    /// GPINTEN: interrupt-on-change: 0=disable; 1=enable
-    GPINTENB = 0x05,
-    /// DEFVAL: default values for interrupt-on-change
-    DEFVALB = 0x07,
-    /// INTCON: interrupt-on-change config: 0=compare to previous pin value;
-    ///   1=compare to corresponding bit in DEFVAL
-    INTCONB = 0x09,
-    /// IOCON: configuration register
-    /// - Pin 7: BANK (which driver assumes stays 0)
-    /// - Pin 6: MIRROR: if enabled, INT{A,B} are logically ORed; an interrupt on either
-    ///          port will cause both pins to activate
-    /// - Pin 5: SEQOP: controls the incrementing function of the address pointer
-    /// - Pin 4: DISSLW: disables slew rate control on SDA
-    /// - Pin 3: HAEN: no effect on MCP23017, enables address pins on MCP23S17
-    /// - Pin 2: ODR: interrupt pins are 0=active-driver outputs (INTPOL sets polarity)
-    ///          or 1=open-drain outputs (overrides INTPOL)
-    /// - Pin 1: INTPOL: interrupt pin is 0=active-low or 1=active-high
-    /// - Pin 0: unused
-    IOCONB = 0x0b,
-    /// GPPU: GPIO pull-ups: enables weak internal pull-ups on each pin (when configured
-    ///   as an input)
-    GPPUB = 0x0d,
-    /// INTF: interrupt flags: 0=no interrupt pending; 1=corresponding pin caused interrupt
-    INTFB = 0x0f,
-    /// INTCAP: interrupt captured value: reflects value of each pin at the time that they
-    ///   caused an interrupt
-    INTCAPB = 0x11,
-    /// GPIO: reflects logic level on pins
-    GPIOB = 0x13,
-    /// OLAT: output latches: sets state for pins configured as outputs
-    OLATB = 0x15,
+    /// I/O Direction Register
+    InputPort0 = 0x00,
+    InputPort1 = 0x01,
+    OutputPort0 = 0x02,
+    OutputPort1 = 0x03,
+    PolarityInversionPort0 = 0x04,
+    PolarityInversionPort1 = 0x05,
+    ConfigurationPort0 = 0x06,
+    ConfigurationPort1 = 0x07,
+    OutpurtDriveStrengthRegister0A = 0x40,
+    OutpirtDriveStrengthRegister0B = 0x41,
+    OutportDriveStrengthRegister1A = 0x42,
+    OutportDriveStrengthRegister1B = 0x43,
+    InputLatchRegister0 = 0x44,
+    InputLatchRegister1 = 0x45,
+    PullUpPullDownEnableRegister0 = 0x46,
+    PullUpPullDownEnableRegister1 = 0x47,
+    PullUpPullDownSelectionRegister0 = 0x48,
+    PullUpPullDownSelectionRegister1 = 0x49,
+    InteruptMaskRegister0 = 0x4A,
+    InteruptMaskRegister1 = 0x4B,
+    InteruptStatusRegister0 = 0x4C,
+    InteruptStatusRegister1 = 0x4D,
+    OutputPortConfigurationRegister = 0x4F,
+    InterruptEdgeRegister0A = 0x50,
+    InterruptEdgeRegister0B = 0x51,
+    InterruptEdgeRegister1A = 0x52,
+    InterruptEdgeRegister1B = 0x53,
+    InterruptClearRegister0 = 0x54,
+    InterruptClearRegister1 = 0x55,
+    InputPortReadWithoutInterruptClear0 = 0x56,
+    InputPortReadWithoutInterruptClear1 = 0x57,
+    OutputConfigurationRegister0 = 0x58,
+    OutputConfigurationRegister1 = 0x59,
+    SwitchDeboundeEnable0 = 0x5A,
+    SwitchDeboundeEnable01 = 0x5B,
+    SwitchDebounceCount = 0x5C,
 }
 
 impl From<Regs> for u8 {
@@ -322,8 +283,8 @@ impl<B: PCAL9714Bus> crate::PortDriverPolarity for Driver<B> {
 
 // We need these newtype wrappers since we can't implement `Mcp23x17Bus` for both `I2cBus` and `SpiBus`
 // at the same time
-pub struct PCAL9714Bus<I2C>(I2C);
-pub struct PCAL9714Bus<SPI>(SPI);
+// pub struct PCAL9714Bus<I2C>(I2C);
+pub struct PCAL9714_Bus<SPI>(SPI);
 
 /// Special -Bus trait for the Mcp23x17 since the SPI version is a bit special/weird in terms of writing
 /// SPI registers, which can't necessarily be generialized for other devices.
@@ -351,7 +312,7 @@ pub trait PCAL9714Bus {
     }
 }
 
-impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714Bus<SPI> {
+impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
     type BusError = SPI::BusError;
 
     // TODO: Modify to meet the PCAL9714 read and write commands
@@ -377,24 +338,6 @@ impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714Bus<SPI> {
         self.0.transaction(&mut tx)?;
 
         Ok(val[0])
-    }
-}
-
-// TODO: remove, pcal does not support i2c
-impl<I2C: crate::I2cBus> Mcp23x17Bus for Mcp23017Bus<I2C> {
-    type BusError = I2C::BusError;
-
-    fn write_reg<R: Into<u8>>(
-        &mut self,
-        addr: u8,
-        reg: R,
-        value: u8,
-    ) -> Result<(), Self::BusError> {
-        self.0.write_reg(addr, reg, value)
-    }
-
-    fn read_reg<R: Into<u8>>(&mut self, addr: u8, reg: R) -> Result<u8, Self::BusError> {
-        self.0.read_reg(addr, reg)
     }
 }
 
