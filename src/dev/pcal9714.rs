@@ -15,16 +15,6 @@ use crate::{dev::pca9702::Pca9702Bus, I2cExt};
 /// `MCP23x17` "16-Bit I/O Expander with Serial Interface" with I2C or SPI interface
 pub struct PCAL9714<M>(M);
 
-// impl<I2C> Mcp23x17<core::cell::RefCell<Driver<Mcp23017Bus<I2C>>>>
-// where
-//     I2C: crate::I2cBus,
-// {
-//     /// Create a new instance of the MCP23017 with I2C interface
-//     pub fn new_mcp23017(bus: I2C, a0: bool, a1: bool, a2: bool) -> Self {
-//         Self::with_mutex(Mcp23017Bus(bus), a0, a1, a2)
-//     }
-// }
-
 impl<SPI> PCAL9714<core::cell::RefCell<Driver<PCAL9714_Bus<SPI>>>>
 where
     SPI: crate::SpiBus,
@@ -411,70 +401,12 @@ impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
 
 #[cfg(test)]
 mod tests {
-    use embedded_hal_mock::eh1::{i2c as mock_i2c, spi as mock_spi};
-
-    #[test]
-    fn mcp23017() {
-        let expectations = [
-            // pin setup gpa0
-            mock_i2c::Transaction::write_read(0x22, vec![0x00], vec![0xff]),
-            mock_i2c::Transaction::write(0x22, vec![0x00, 0xfe]),
-            // pin setup gpa7
-            mock_i2c::Transaction::write_read(0x22, vec![0x00], vec![0xfe]),
-            mock_i2c::Transaction::write(0x22, vec![0x00, 0x7e]),
-            mock_i2c::Transaction::write_read(0x22, vec![0x00], vec![0x7e]),
-            mock_i2c::Transaction::write(0x22, vec![0x00, 0xfe]),
-            // pin setup gpb0
-            mock_i2c::Transaction::write_read(0x22, vec![0x01], vec![0xff]),
-            mock_i2c::Transaction::write(0x22, vec![0x01, 0xfe]),
-            // pin setup gpb7
-            mock_i2c::Transaction::write_read(0x22, vec![0x01], vec![0xfe]),
-            mock_i2c::Transaction::write(0x22, vec![0x01, 0x7e]),
-            mock_i2c::Transaction::write_read(0x22, vec![0x01], vec![0x7e]),
-            mock_i2c::Transaction::write(0x22, vec![0x01, 0xfe]),
-            // output gpa0, gpb0
-            mock_i2c::Transaction::write(0x22, vec![0x12, 0x01]),
-            mock_i2c::Transaction::write(0x22, vec![0x12, 0x00]),
-            mock_i2c::Transaction::write(0x22, vec![0x13, 0x01]),
-            mock_i2c::Transaction::write(0x22, vec![0x13, 0x00]),
-            // input gpa7, gpb7
-            mock_i2c::Transaction::write_read(0x22, vec![0x12], vec![0x80]),
-            mock_i2c::Transaction::write_read(0x22, vec![0x12], vec![0x7f]),
-            mock_i2c::Transaction::write_read(0x22, vec![0x13], vec![0x80]),
-            mock_i2c::Transaction::write_read(0x22, vec![0x13], vec![0x7f]),
-        ];
-        let mut bus = mock_i2c::Mock::new(&expectations);
-
-        let mut pca = super::Mcp23x17::new_mcp23017(bus.clone(), false, true, false);
-        let pca_pins = pca.split();
-
-        let mut gpa0 = pca_pins.gpa0.into_output().unwrap();
-        let gpa7 = pca_pins.gpa7.into_output().unwrap();
-        let gpa7 = gpa7.into_input().unwrap();
-
-        let mut gpb0 = pca_pins.gpb0.into_output().unwrap();
-        let gpb7 = pca_pins.gpb7.into_output().unwrap();
-        let gpb7 = gpb7.into_input().unwrap();
-
-        // output high and low
-        gpa0.set_high().unwrap();
-        gpa0.set_low().unwrap();
-        gpb0.set_high().unwrap();
-        gpb0.set_low().unwrap();
-
-        // input high and low
-        assert!(gpa7.is_high().unwrap());
-        assert!(gpa7.is_low().unwrap());
-        assert!(gpb7.is_high().unwrap());
-        assert!(gpb7.is_low().unwrap());
-
-        bus.done();
-    }
+    use embedded_hal_mock::eh1::spi as mock_spi;
 
     #[test]
     fn mcp23s17() {
         let expectations = [
-            // pin setup gpa0
+            // pin setup gp0_1
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
             mock_spi::Transaction::read(0xff),
@@ -482,7 +414,7 @@ mod tests {
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x40, 0x00, 0xfe]),
             mock_spi::Transaction::transaction_end(),
-            // pin setup gpa7
+            // pin setup gp0_7
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
             mock_spi::Transaction::read(0xfe),
@@ -497,14 +429,15 @@ mod tests {
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x40, 0x00, 0xfe]),
             mock_spi::Transaction::transaction_end(),
-            // pin setup gpb0
+            // pin setup gp1_0
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
             mock_spi::Transaction::read(0xff),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x40, 0x01, 0xfe]),
-            mock_spi::Transaction::transaction_end(), // pin setup gpb7
+            mock_spi::Transaction::transaction_end(),
+            // pin setup gp1_5
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
             mock_spi::Transaction::read(0xfe),
@@ -519,7 +452,7 @@ mod tests {
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x40, 0x01, 0xfe]),
             mock_spi::Transaction::transaction_end(),
-            // output gpa0, gpb0
+            // output gp0_0, gp1_0
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x40, 0x12, 0x01]),
             mock_spi::Transaction::transaction_end(),
@@ -532,7 +465,7 @@ mod tests {
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x40, 0x13, 0x00]),
             mock_spi::Transaction::transaction_end(),
-            // input gpa7, gpb7
+            // input gp0_7, gp1_5
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x12]),
             mock_spi::Transaction::read(0x80),
@@ -552,28 +485,28 @@ mod tests {
         ];
         let mut bus = mock_spi::Mock::new(&expectations);
 
-        let mut pca = super::Mcp23x17::new_mcp23s17(bus.clone());
+        let mut pca = super::PCAL9714::new_PCAL9714(bus.clone());
         let pca_pins = pca.split();
 
-        let mut gpa0 = pca_pins.gpa0.into_output().unwrap();
-        let gpa7 = pca_pins.gpa7.into_output().unwrap();
-        let gpa7 = gpa7.into_input().unwrap();
+        let mut gp0_0 = pca_pins.gp0_0.into_output().unwrap();
+        let gp0_7 = pca_pins.gp0_7.into_output().unwrap();
+        let gp0_7 = gp0_7.into_input().unwrap();
 
-        let mut gpb0 = pca_pins.gpb0.into_output().unwrap();
-        let gpb7 = pca_pins.gpb7.into_output().unwrap();
-        let gpb7 = gpb7.into_input().unwrap();
+        let mut gp1_0 = pca_pins.gp1_0.into_output().unwrap();
+        let gp1_5 = pca_pins.gp1_5.into_output().unwrap();
+        let gp1_5 = gp1_5.into_input().unwrap();
 
         // output high and low
-        gpa0.set_high().unwrap();
-        gpa0.set_low().unwrap();
-        gpb0.set_high().unwrap();
-        gpb0.set_low().unwrap();
+        gp0_0.set_high().unwrap();
+        gp0_0.set_low().unwrap();
+        gp1_0.set_high().unwrap();
+        gp1_0.set_low().unwrap();
 
         // input high and low
-        assert!(gpa7.is_high().unwrap());
-        assert!(gpa7.is_low().unwrap());
-        assert!(gpb7.is_high().unwrap());
-        assert!(gpb7.is_low().unwrap());
+        assert!(gp0_7.is_high().unwrap());
+        assert!(gp0_7.is_low().unwrap());
+        assert!(gp1_5.is_high().unwrap());
+        assert!(gp1_5.is_low().unwrap());
 
         bus.done();
     }
