@@ -276,6 +276,47 @@ impl<B: PCAL9714Bus> crate::PortDriverPullUp for Driver<B> {
 }
 
 // TODO: write port driver for pull down
+impl<B: PCAL9714Bus> crate::PortDriverPullDown for Driver<B> {
+    fn set_pull_down(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error> {
+        let (mask_set, mask_clear) = match enable {
+            true => (mask as u16, 0),
+            false => (0, mask as u16),
+        };
+        if mask & 0x00FF != 0 {
+            // Enable/Disable pullup
+            self.bus.update_reg(
+                self.addr,
+                Regs::PullUpPullDownEnableRegister0,
+                !((mask_set & 0xFF) as u8),
+                !((mask_clear & 0xFF) as u8),
+            )?;
+            // Sett 1 then pullup
+            self.bus.update_reg(
+                self.addr,
+                Regs::PullUpPullDownSelectionRegister0,
+                !((mask_set & 0xFF) as u8),
+                !((mask_clear & 0xFF) as u8),
+            )?;
+        }
+        if mask & 0xFF00 != 0 {
+            // Enable/Disable pullup
+            self.bus.update_reg(
+                self.addr,
+                Regs::PullUpPullDownEnableRegister1,
+                !((mask_set >> 8) as u8),
+                !((mask_clear >> 8) as u8),
+            )?;
+            // Sett 1 then pullup
+            self.bus.update_reg(
+                self.addr,
+                Regs::PullUpPullDownSelectionRegister1,
+                !((mask_set >> 8) as u8),
+                !((mask_clear >> 8) as u8),
+            )?;
+        }
+        Ok(())
+    }
+}
 
 impl<B: PCAL9714Bus> crate::PortDriverPolarity for Driver<B> {
     fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error> {
