@@ -146,8 +146,10 @@ pub struct Driver<B> {
 }
 
 impl<B> Driver<B> {
-    pub fn new(bus: B, a0: bool, a1: bool, a2: bool) -> Self {
-        let addr = 0x20 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8);
+    pub fn new(bus: B, connected_to_vdd: bool, a1: bool, a2: bool) -> Self {
+        // TODO: Add my address here
+        // let addr = 0x20 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8);
+        let addr = 0x40 | (connected_to_vdd as u8);
         Self {
             bus,
             out: 0x0000,
@@ -159,6 +161,7 @@ impl<B> Driver<B> {
 impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
     type Error = B::BusError;
 
+    /// Sets the pin high
     fn set(&mut self, mask_high: u32, mask_low: u32) -> Result<(), Self::Error> {
         // TODO: Implement my own set functions, Look at how one of the other implementations does
         // it for the different pin banks. This method may work too.
@@ -166,11 +169,11 @@ impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
         self.out &= !mask_low as u16;
         if (mask_high | mask_low) & 0x00FF != 0 {
             self.bus
-                .write_reg(self.addr, Regs::GPIOA, (self.out & 0xFF) as u8)?;
+                .write_reg(self.addr, Regs::OutputPort0, (self.out & 0xFF) as u8)?;
         }
         if (mask_high | mask_low) & 0xFF00 != 0 {
             self.bus
-                .write_reg(self.addr, Regs::GPIOB, (self.out >> 8) as u8)?;
+                .write_reg(self.addr, Regs::OutputPort1, (self.out >> 8) as u8)?;
         }
         Ok(())
     }
@@ -179,14 +182,15 @@ impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
         Ok(((self.out as u32) & mask_high) | (!(self.out as u32) & mask_low))
     }
 
+    /// Reads the inputpins
     fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
         let io0 = if (mask_high | mask_low) & 0x00FF != 0 {
-            self.bus.read_reg(self.addr, Regs::GPIOA)?
+            self.bus.read_reg(self.addr, Regs::InputPort0)?
         } else {
             0
         };
         let io1 = if (mask_high | mask_low) & 0xFF00 != 0 {
-            self.bus.read_reg(self.addr, Regs::GPIOB)?
+            self.bus.read_reg(self.addr, Regs::InputPort1)?
         } else {
             0
         };
@@ -195,6 +199,7 @@ impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
     }
 }
 
+/// This function sets the direction of the pin, if it is an output or an input
 impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
     fn set_direction(
         // TODO: Modify to meet the PCAL9714
@@ -210,7 +215,7 @@ impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
         if mask & 0x00FF != 0 {
             self.bus.update_reg(
                 self.addr,
-                Regs::IODIRA,
+                Regs::ConfigurationPort0,
                 (mask_set & 0xFF) as u8,
                 (mask_clear & 0xFF) as u8,
             )?;
@@ -218,7 +223,7 @@ impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
         if mask & 0xFF00 != 0 {
             self.bus.update_reg(
                 self.addr,
-                Regs::IODIRB,
+                Regs::ConfigurationPort1,
                 (mask_set >> 8) as u8,
                 (mask_clear >> 8) as u8,
             )?;
@@ -235,17 +240,33 @@ impl<B: PCAL9714Bus> crate::PortDriverPullUp for Driver<B> {
             false => (0, mask as u16),
         };
         if mask & 0x00FF != 0 {
+            // Enable/Disable pullup
             self.bus.update_reg(
                 self.addr,
-                Regs::GPPUA,
+                Regs::PullUpPullDownEnableRegister0,
+                (mask_set & 0xFF) as u8,
+                (mask_clear & 0xFF) as u8,
+            )?;
+            // Sett 1 then pullup
+            self.bus.update_reg(
+                self.addr,
+                Regs::PullUpPullDownSelectionRegister0,
                 (mask_set & 0xFF) as u8,
                 (mask_clear & 0xFF) as u8,
             )?;
         }
         if mask & 0xFF00 != 0 {
+            // Enable/Disable pullup
             self.bus.update_reg(
                 self.addr,
-                Regs::GPPUB,
+                Regs::PullUpPullDownEnableRegister1,
+                (mask_set >> 8) as u8,
+                (mask_clear >> 8) as u8,
+            )?;
+            // Sett 1 then pullup
+            self.bus.update_reg(
+                self.addr,
+                Regs::PullUpPullDownSelectionRegister1,
                 (mask_set >> 8) as u8,
                 (mask_clear >> 8) as u8,
             )?;
@@ -254,9 +275,10 @@ impl<B: PCAL9714Bus> crate::PortDriverPullUp for Driver<B> {
     }
 }
 
+// TODO: write port driver for pull down
+
 impl<B: PCAL9714Bus> crate::PortDriverPolarity for Driver<B> {
     fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error> {
-        // TODO: Modify to meet the PCAL9714
         let (mask_set, mask_clear) = match inverted {
             true => (mask as u16, 0),
             false => (0, mask as u16),
@@ -264,7 +286,7 @@ impl<B: PCAL9714Bus> crate::PortDriverPolarity for Driver<B> {
         if mask & 0x00FF != 0 {
             self.bus.update_reg(
                 self.addr,
-                Regs::IPOLA,
+                Regs::PolarityInversionPort0,
                 (mask_set & 0xFF) as u8,
                 (mask_clear & 0xFF) as u8,
             )?;
@@ -272,7 +294,7 @@ impl<B: PCAL9714Bus> crate::PortDriverPolarity for Driver<B> {
         if mask & 0xFF00 != 0 {
             self.bus.update_reg(
                 self.addr,
-                Regs::IPOLB,
+                Regs::PolarityInversionPort1,
                 (mask_set >> 8) as u8,
                 (mask_clear >> 8) as u8,
             )?;
@@ -291,7 +313,6 @@ pub struct PCAL9714_Bus<SPI>(SPI);
 pub trait PCAL9714Bus {
     type BusError;
 
-    // TODO: Modify to meet the PCAL9714 read and write commands
     fn write_reg<R: Into<u8>>(&mut self, addr: u8, reg: R, value: u8)
         -> Result<(), Self::BusError>;
     fn read_reg<R: Into<u8>>(&mut self, addr: u8, reg: R) -> Result<u8, Self::BusError>;
@@ -315,14 +336,20 @@ pub trait PCAL9714Bus {
 impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
     type BusError = SPI::BusError;
 
-    // TODO: Modify to meet the PCAL9714 read and write commands
     fn write_reg<R: Into<u8>>(
         &mut self,
         addr: u8,
         reg: R,
         value: u8,
     ) -> Result<(), Self::BusError> {
-        self.0.write(&[0x40 | addr << 1, reg.into(), value])?;
+        let conf = [
+            // (32 << 1) & !0x01,
+            addr & !0x01,
+            reg.into(),
+            value, // All outputs
+        ];
+
+        self.0.write(&conf)?;
 
         Ok(())
     }
