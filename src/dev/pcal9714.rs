@@ -404,108 +404,145 @@ mod tests {
     use embedded_hal_mock::eh1::spi as mock_spi;
 
     #[test]
-    fn mcp23s17() {
+    fn pcal9714() {
         let expectations = [
             // pin setup gp0_1
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x06]),
             mock_spi::Transaction::read(0xff),
             mock_spi::Transaction::transaction_end(),
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x00, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x06, 0xfe]),
             mock_spi::Transaction::transaction_end(),
-            // pin setup gp0_7
+            // Pin setup of gp0_7
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
+            //      Reading the current pin configuration
+            mock_spi::Transaction::write_vec(vec![0x41, 0x06]),
             mock_spi::Transaction::read(0xfe),
             mock_spi::Transaction::transaction_end(),
+            //      Setting the pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x00, 0x7e]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x06, 0x7e]),
             mock_spi::Transaction::transaction_end(),
+            //      Reading the pin configuration
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
             mock_spi::Transaction::read(0x7e),
             mock_spi::Transaction::transaction_end(),
+            //      Setting the pin as an input
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x00, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x06, 0xfe]),
             mock_spi::Transaction::transaction_end(),
-            // pin setup gp1_0
+            // Pin setup of gp1_0
+            //      Reading current port configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x07]),
             mock_spi::Transaction::read(0xff),
             mock_spi::Transaction::transaction_end(),
+            //      Setting the pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x01, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, 0x07, 0xfe]),
             mock_spi::Transaction::transaction_end(),
-            // pin setup gp1_5
+            // Pin setup of gp1_5
+            //      Reading current port configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x07]),
             mock_spi::Transaction::read(0xfe),
             mock_spi::Transaction::transaction_end(),
+            //      Setting pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x01, 0x7e]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x07, 0x7e]),
             mock_spi::Transaction::transaction_end(),
+            //      Reading pin configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x07]),
             mock_spi::Transaction::read(0x7e),
             mock_spi::Transaction::transaction_end(),
+            //      Setting pin as input
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x01, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x07, 0xfe]),
             mock_spi::Transaction::transaction_end(),
-            // output gp0_0, gp1_0
+            // Setting gp0_0 high
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x12, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x02, 0x01]),
             mock_spi::Transaction::transaction_end(),
+            // Setting gp0_0 low
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x12, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x02, 0x00]),
             mock_spi::Transaction::transaction_end(),
+            // Setting gp1_0 high
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x13, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x03, 0x01]),
             mock_spi::Transaction::transaction_end(),
+            // Setting gp1_0 low
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x40, 0x13, 0x00]),
             mock_spi::Transaction::transaction_end(),
             // input gp0_7, gp1_5
+            // Reading the value of gp0_7
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x12]),
-            mock_spi::Transaction::read(0x80),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
+            mock_spi::Transaction::read(0x80), // TODO: check
             mock_spi::Transaction::transaction_end(),
+            // Reading the value of gp0_7
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x12]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
             mock_spi::Transaction::read(0x7f),
             mock_spi::Transaction::transaction_end(),
+            // Reading the value of gp1_5
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x13]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
             mock_spi::Transaction::read(0x80),
             mock_spi::Transaction::transaction_end(),
+            // Reading the value of gp1_5
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x13]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
             mock_spi::Transaction::read(0x7f),
             mock_spi::Transaction::transaction_end(),
         ];
+
+        println!("INFO: Starting Mock SPI");
         let mut bus = mock_spi::Mock::new(&expectations);
 
+        println!("INFO: Configuring the port expander");
         let mut pca = super::PCAL9714::new_PCAL9714(bus.clone());
         let pca_pins = pca.split();
 
+        println!("INFO: Setting gp0_0 as output");
         let mut gp0_0 = pca_pins.gp0_0.into_output().unwrap();
+
+        println!("INFO: Setting gp0_7 as output");
         let gp0_7 = pca_pins.gp0_7.into_output().unwrap();
+        println!("INFO: Setting gp0_7 as input");
         let gp0_7 = gp0_7.into_input().unwrap();
 
+        println!("INFO: Setting gp1_0 as output");
         let mut gp1_0 = pca_pins.gp1_0.into_output().unwrap();
+        println!("INFO: Setting gp1_5 as output");
         let gp1_5 = pca_pins.gp1_5.into_output().unwrap();
+        println!("INFO: Setting gp1_5 as output");
         let gp1_5 = gp1_5.into_input().unwrap();
 
         // output high and low
+        println!("INFO: Setting gp0_0 high");
         gp0_0.set_high().unwrap();
+        println!("INFO: Setting gp0_0 low");
         gp0_0.set_low().unwrap();
+        println!("INFO: Setting gp1_0 high");
         gp1_0.set_high().unwrap();
+        println!("INFO: Setting gp1_0 low");
         gp1_0.set_low().unwrap();
 
+        println!("INFO: Asserting the inputs");
+
         // input high and low
+        println!("INFO: Asserting gp07 is high?");
         assert!(gp0_7.is_high().unwrap());
+        println!("INFO: Asserting gp07 is low?");
         assert!(gp0_7.is_low().unwrap());
+        println!("INFO: Asserting gp1_5 is high?");
         assert!(gp1_5.is_high().unwrap());
+        println!("INFO: Asserting gp1_5 is low?");
         assert!(gp1_5.is_low().unwrap());
 
         bus.done();
