@@ -20,6 +20,23 @@
 //! assert!(io1_5.is_high().unwrap());
 //! ```
 //!
+//! ## Example
+//! ```no_run
+//! // Initialize SPI peripheral from HAL
+//! let spi = todo!();
+//! # let spi = embedded_hal_mock::eh1::i2c::Mock::new(&[]);
+//!
+//! // TODO:
+//! let mut pcal9714 = port_expander::PCAL9714::new(spi, false, false, false);
+//! let pcal_pins = pcal9714.split();
+//!
+//! let io0_0 = pcal_pins.io0_0.into_output().unwrap();
+//! let io1_5 = pcal_pins.io0_1; // default is input
+//!
+//! io0_0.set_high().unwrap();
+//! assert!(io1_5.is_high().unwrap());
+//! ```
+//!
 //! ## Accessing multiple pins at the same time
 //! Sometimes timing constraints mandate that multiple pin accesses (reading or writing) happen at
 //! the same time.  The [`write_multiple()`] and [`read_multiple()`] methods are designed for doing
