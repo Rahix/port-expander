@@ -21,7 +21,7 @@ where
 {
     /// Create a new instance of the PCAL9714 with SPI interface
     pub fn new_PCAL9714(bus: SPI, address_pin: bool) -> Self {
-        Self::with_mutex(PCAL9714_Bus(bus), true, false, false)
+        Self::with_mutex(PCAL9714_Bus(bus), address_pin, false, false)
     }
 }
 
@@ -137,11 +137,12 @@ pub struct Driver<B> {
 }
 
 impl<B> Driver<B> {
-    pub fn new(bus: B, a0: bool, _a1: bool, _a2: bool) -> Self {
-        // TODO: Add my address here
-        // let addr = 0x40 | (connected_to_vdd as u8);
-        let addr = 0x40;
-        assert_eq!(0x40, addr);
+    pub fn new(bus: B, address_pin: bool, _a1: bool, _a2: bool) -> Self {
+        // Address pin is connected to V_ss (-> 0x40) or V_dd(-> 0x42)
+        let addr = match address_pin {
+            true => 0x42,
+            false => 0x40,
+        };
         Self {
             bus,
             out: 0x0000,
@@ -204,7 +205,6 @@ impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
             crate::Direction::Input => (mask as u16, 0),
             crate::Direction::Output => (0, mask as u16),
         };
-        assert_eq!(0x40, self.addr);
         if mask & 0x00FF != 0 {
             self.bus.update_reg(
                 self.addr,
@@ -358,7 +358,6 @@ pub trait PCAL9714Bus {
         mask_clear: u8,
     ) -> Result<(), Self::BusError> {
         let reg = reg.into();
-        assert_eq!(0x40, addr);
 
         let mut val = self.read_reg(addr, reg)?;
 
@@ -379,7 +378,6 @@ impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
         reg: R,
         value: u8,
     ) -> Result<(), Self::BusError> {
-        assert_eq!(addr, 0x40);
         let conf = [addr, reg.into(), value];
 
         self.0.write(&conf)?;
@@ -390,7 +388,6 @@ impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
     fn read_reg<R: Into<u8>>(&mut self, addr: u8, reg: R) -> Result<u8, Self::BusError> {
         let mut val = [0; 1];
         let addr = addr | 0x01;
-        assert_eq!(addr, 0x41);
         let write = [addr, reg.into()];
         let mut tx = [
             // TODO: Modify to meet the correct embedded hal things
