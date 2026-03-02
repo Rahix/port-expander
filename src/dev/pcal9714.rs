@@ -94,8 +94,8 @@ enum Regs {
     PolarityInversionPort1 = 0x05,
     ConfigurationPort0 = 0x06,
     ConfigurationPort1 = 0x07,
-    OutpurtDriveStrengthRegister0A = 0x40,
-    OutpirtDriveStrengthRegister0B = 0x41,
+    OutportDriveStrengthRegister0A = 0x40,
+    OutportDriveStrengthRegister0B = 0x41,
     OutportDriveStrengthRegister1A = 0x42,
     OutportDriveStrengthRegister1B = 0x43,
     InputLatchRegister0 = 0x44,
@@ -139,7 +139,6 @@ pub struct Driver<B> {
 impl<B> Driver<B> {
     pub fn new(bus: B, a0: bool, _a1: bool, _a2: bool) -> Self {
         // TODO: Add my address here
-        // let addr = 0x20 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8);
         // let addr = 0x40 | (connected_to_vdd as u8);
         let addr = 0x40;
         assert_eq!(0x40, addr);
@@ -406,6 +405,7 @@ impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use embedded_hal_mock::eh1::spi as mock_spi;
     use log;
     use pretty_env_logger;
@@ -418,98 +418,114 @@ mod tests {
             .filter(None, log::LevelFilter::Debug)
             .try_init();
 
+        // Making SPI expectation list
+        // See datasheet for more specific details for the transactions.
+        //
+        // Reading the PCAL9714:
+        //      Write: [Addr, Register]
+        //      Read: [Value]
+        //
+        // Writing to the PCAL9714:
+        //      Write: [Addr, Register, Value]
+        //
+        //
+        // Address:
+        //      For reading: 0x41
+        //      For Writing: 0x40
         let expectations = [
-            // pin setup gp0_1
+            // Pin setup gp0_1
+            //      Reading the current pin configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x06]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::ConfigurationPort0.into()]),
             mock_spi::Transaction::read(0xff),
             mock_spi::Transaction::transaction_end(),
+            //      Setting the pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x06, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::ConfigurationPort0.into(), 0xfe]),
             mock_spi::Transaction::transaction_end(),
             // Pin setup of gp0_7
             mock_spi::Transaction::transaction_start(),
             //      Reading the current pin configuration
-            mock_spi::Transaction::write_vec(vec![0x41, 0x06]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::ConfigurationPort0.into()]),
             mock_spi::Transaction::read(0xfe),
             mock_spi::Transaction::transaction_end(),
             //      Setting the pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x06, 0x7e]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::ConfigurationPort0.into(), 0x7e]),
             mock_spi::Transaction::transaction_end(),
             //      Reading the pin configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x06]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::ConfigurationPort0.into()]),
             mock_spi::Transaction::read(0x7e),
             mock_spi::Transaction::transaction_end(),
             //      Setting the pin as an input
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x06, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::ConfigurationPort0.into(), 0xfe]),
             mock_spi::Transaction::transaction_end(),
             // Pin setup of gp1_0
             //      Reading current port configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x07]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::ConfigurationPort1.into()]),
             mock_spi::Transaction::read(0xff),
             mock_spi::Transaction::transaction_end(),
             //      Setting the pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x07, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::ConfigurationPort1.into(), 0xfe]),
             mock_spi::Transaction::transaction_end(),
             // Pin setup of gp1_5
             //      Reading current port configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x07]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::ConfigurationPort1.into()]),
             mock_spi::Transaction::read(0xfe),
             mock_spi::Transaction::transaction_end(),
             //      Setting pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x07, 0xDE]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::ConfigurationPort1.into(), 0xDE]),
             mock_spi::Transaction::transaction_end(),
             //      Reading pin configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x07]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::ConfigurationPort1.into()]),
             mock_spi::Transaction::read(0xde),
             mock_spi::Transaction::transaction_end(),
             //      Setting pin as input
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x07, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::ConfigurationPort1.into(), 0xfe]),
             mock_spi::Transaction::transaction_end(),
             // Setting gp0_0 high
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x02, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::OutputPort0.into(), 0x01]),
             mock_spi::Transaction::transaction_end(),
             // Setting gp0_0 low
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x02, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::OutputPort0.into(), 0x00]),
             mock_spi::Transaction::transaction_end(),
             // Setting gp1_0 high
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x03, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::OutputPort1.into(), 0x01]),
             mock_spi::Transaction::transaction_end(),
             // Setting gp1_0 low
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x03, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x40, Regs::OutputPort1.into(), 0x00]),
             mock_spi::Transaction::transaction_end(),
             // input gp0_7, gp1_5
             // Reading the value of gp0_7
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::InputPort0.into()]),
             mock_spi::Transaction::read(0x80), // TODO: check
             mock_spi::Transaction::transaction_end(),
             // Reading the value of gp0_7
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::InputPort0.into()]),
             mock_spi::Transaction::read(0x7f),
             mock_spi::Transaction::transaction_end(),
             // Reading the value of gp1_5
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::InputPort1.into()]),
             mock_spi::Transaction::read(0xB0),
             mock_spi::Transaction::transaction_end(),
             // Reading the value of gp1_5
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
+            mock_spi::Transaction::write_vec(vec![0x41, Regs::InputPort1.into()]),
             mock_spi::Transaction::read(0xDf),
             mock_spi::Transaction::transaction_end(),
         ];
