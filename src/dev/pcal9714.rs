@@ -119,8 +119,8 @@ enum Regs {
     InputPortReadWithoutInterruptClear1 = 0x57,
     OutputConfigurationRegister0 = 0x58,
     OutputConfigurationRegister1 = 0x59,
-    SwitchDeboundeEnable0 = 0x5A,
-    SwitchDeboundeEnable01 = 0x5B,
+    SwitchDebounceEnable0 = 0x5A,
+    SwitchDebounceEnable1 = 0x5B,
     SwitchDebounceCount = 0x5C,
 }
 
