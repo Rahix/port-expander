@@ -156,8 +156,6 @@ impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
 
     /// Sets the pin high
     fn set(&mut self, mask_high: u32, mask_low: u32) -> Result<(), Self::Error> {
-        // TODO: Implement my own set functions, Look at how one of the other implementations does
-        // it for the different pin banks. This method may work too.
         self.out |= mask_high as u16;
         self.out &= !mask_low as u16;
         if (mask_high | mask_low) & 0x00FF != 0 {
@@ -175,7 +173,7 @@ impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
         Ok(((self.out as u32) & mask_high) | (!(self.out as u32) & mask_low))
     }
 
-    /// Reads the inputpins
+    /// Reads the input pins
     fn get(&mut self, mask_high: u32, mask_low: u32) -> Result<u32, Self::Error> {
         let io0 = if (mask_high | mask_low) & 0x00FF != 0 {
             self.bus.read_reg(self.addr, Regs::InputPort0)?
@@ -195,7 +193,6 @@ impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
 /// This function sets the direction of the pin, if it is an output or an input
 impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
     fn set_direction(
-        // TODO: Modify to meet the PCAL9714
         &mut self,
         mask: u32,
         dir: crate::Direction,
@@ -227,7 +224,6 @@ impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
 
 impl<B: PCAL9714Bus> crate::PortDriverPullUp for Driver<B> {
     fn set_pull_up(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error> {
-        // TODO: Modify to meet the PCAL9714
         let (mask_set, mask_clear) = match enable {
             true => (mask as u16, 0),
             false => (0, mask as u16),
@@ -268,7 +264,6 @@ impl<B: PCAL9714Bus> crate::PortDriverPullUp for Driver<B> {
     }
 }
 
-// TODO: write port driver for pull down
 impl<B: PCAL9714Bus> crate::PortDriverPullDown for Driver<B> {
     fn set_pull_down(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error> {
         let (mask_set, mask_clear) = match enable {
@@ -341,7 +336,7 @@ impl<B: PCAL9714Bus> crate::PortDriverPolarity for Driver<B> {
 // at the same time
 pub struct PCAL9714_Bus<SPI>(SPI);
 
-/// Special -Bus trait for the Mcp23x17 since the SPI version is a bit special/weird in terms of writing
+/// Special -Bus trait for the PCAL9714 since the SPI version is a bit special/weird in terms of writing
 /// SPI registers, which can't necessarily be generialized for other devices.
 pub trait PCAL9714Bus {
     type BusError;
@@ -405,6 +400,7 @@ mod tests {
     use super::*;
     use embedded_hal_mock::eh1::spi as mock_spi;
     use log;
+    use log::info;
     use pretty_env_logger;
 
     #[test]
@@ -527,48 +523,48 @@ mod tests {
             mock_spi::Transaction::transaction_end(),
         ];
 
-        println!("INFO: Starting Mock SPI");
+        info!("INFO: Starting Mock SPI");
         let mut bus = mock_spi::Mock::new(&expectations);
 
-        println!("INFO: Configuring the port expander");
+        info!("INFO: Configuring the port expander");
         let mut pca = super::PCAL9714::new_PCAL9714(bus.clone(), false);
         let pca_pins = pca.split();
 
-        println!("INFO: Setting gp0_0 as output");
+        info!("INFO: Setting gp0_0 as output");
         let mut gp0_0 = pca_pins.gp0_0.into_output().unwrap();
 
-        println!("INFO: Setting gp0_7 as output");
+        info!("INFO: Setting gp0_7 as output");
         let gp0_7 = pca_pins.gp0_7.into_output().unwrap();
-        println!("INFO: Setting gp0_7 as input");
+        info!("INFO: Setting gp0_7 as input");
         let gp0_7 = gp0_7.into_input().unwrap();
 
-        println!("INFO: Setting gp1_0 as output");
+        info!("INFO: Setting gp1_0 as output");
         let mut gp1_0 = pca_pins.gp1_0.into_output().unwrap();
-        println!("INFO: Setting gp1_5 as output");
+        info!("INFO: Setting gp1_5 as output");
         let gp1_5 = pca_pins.gp1_5.into_output().unwrap();
-        println!("INFO: Setting gp1_5 as output");
+        info!("INFO: Setting gp1_5 as output");
         let gp1_5 = gp1_5.into_input().unwrap();
 
         // output high and low
-        println!("INFO: Setting gp0_0 high");
+        info!("INFO: Setting gp0_0 high");
         gp0_0.set_high().unwrap();
-        println!("INFO: Setting gp0_0 low");
+        info!("INFO: Setting gp0_0 low");
         gp0_0.set_low().unwrap();
-        println!("INFO: Setting gp1_0 high");
+        info!("INFO: Setting gp1_0 high");
         gp1_0.set_high().unwrap();
-        println!("INFO: Setting gp1_0 low");
+        info!("INFO: Setting gp1_0 low");
         gp1_0.set_low().unwrap();
 
-        println!("INFO: Asserting the inputs");
+        info!("INFO: Asserting the inputs");
 
         // input high and low
-        println!("INFO: Asserting gp07 is high?");
+        info!("INFO: Asserting gp07 is high?");
         assert!(gp0_7.is_high().unwrap());
-        println!("INFO: Asserting gp07 is low?");
+        info!("INFO: Asserting gp07 is low?");
         assert!(gp0_7.is_low().unwrap());
-        println!("INFO: Asserting gp1_5 is high?");
+        info!("INFO: Asserting gp1_5 is high?");
         assert!(gp1_5.is_high().unwrap());
-        println!("INFO: Asserting gp1_5 is low?");
+        info!("INFO: Asserting gp1_5 is low?");
         assert!(gp1_5.is_low().unwrap());
 
         bus.done();
