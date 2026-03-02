@@ -11,7 +11,8 @@
 //! When passing 16-bit values to this driver, the upper byte corresponds to port
 //! B (pins 7..0) and the lower byte corresponds to port A (pins 7..0).
 use crate::{dev::pca9702::Pca9702Bus, I2cExt};
-
+// use defmt::{error, info};
+use log::{info, trace};
 /// `MCP23x17` "16-Bit I/O Expander with Serial Interface" with I2C or SPI interface
 pub struct PCAL9714<M>(M);
 
@@ -21,7 +22,7 @@ where
 {
     /// Create a new instance of the MCP23S17 with SPI interface
     pub fn new_PCAL9714(bus: SPI) -> Self {
-        Self::with_mutex(PCAL9714_Bus(bus), false, false, false)
+        Self::with_mutex(PCAL9714_Bus(bus), true, false, false)
     }
 }
 
@@ -136,10 +137,12 @@ pub struct Driver<B> {
 }
 
 impl<B> Driver<B> {
-    pub fn new(bus: B, connected_to_vdd: bool, a1: bool, a2: bool) -> Self {
+    pub fn new(bus: B, a0: bool, a1: bool, a2: bool) -> Self {
         // TODO: Add my address here
         // let addr = 0x20 | ((a2 as u8) << 2) | ((a1 as u8) << 1) | (a0 as u8);
-        let addr = 0x40 | (connected_to_vdd as u8);
+        // let addr = 0x40 | (connected_to_vdd as u8);
+        let addr = 0x41;
+        assert_eq!(0x41, addr);
         Self {
             bus,
             out: 0x0000,
@@ -198,11 +201,18 @@ impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
         dir: crate::Direction,
         _state: bool,
     ) -> Result<(), Self::Error> {
+        info!(
+            "Direction:: dir {:?}, mask: {:?}, addr{:?}",
+            dir, mask, self.addr
+        );
+
         let (mask_set, mask_clear) = match dir {
             crate::Direction::Input => (mask as u16, 0),
             crate::Direction::Output => (0, mask as u16),
         };
+        assert_eq!(0x41, self.addr);
         if mask & 0x00FF != 0 {
+            info!("Low mask");
             self.bus.update_reg(
                 self.addr,
                 Regs::ConfigurationPort0,
@@ -356,9 +366,17 @@ pub trait PCAL9714Bus {
         mask_clear: u8,
     ) -> Result<(), Self::BusError> {
         let reg = reg.into();
+        assert_eq!(0x41, addr);
+
+        info!("Read reg, addr {:?}, reg {:?}", addr, reg);
         let mut val = self.read_reg(addr, reg)?;
+
+        info!("Read reg, addr {:?}, reg {:?}, val {:?}", addr, reg, val);
         val |= mask_set;
         val &= !mask_clear;
+
+        assert_eq!(0x41, addr);
+        info!("Update reg, addr {:?}, reg {:?}, val {:?}", addr, reg, val);
         self.write_reg(addr, reg, val)?;
         Ok(())
     }
@@ -375,7 +393,7 @@ impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
     ) -> Result<(), Self::BusError> {
         let conf = [
             // (32 << 1) & !0x01,
-            addr & !0x01,
+            addr,
             reg.into(),
             value, // All outputs
         ];
@@ -387,7 +405,8 @@ impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
 
     fn read_reg<R: Into<u8>>(&mut self, addr: u8, reg: R) -> Result<u8, Self::BusError> {
         let mut val = [0; 1];
-        let write = [0x40 | addr << 1 | 0x1, reg.into()];
+        // let write = [0x40 | addr << 1 | 0x1, reg.into()];
+        let write = [addr.into(), reg.into()];
         let mut tx = [
             // TODO: Modify to meet the correct embedded hal things
             embedded_hal::spi::Operation::Write(&write),
@@ -402,9 +421,16 @@ impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
 #[cfg(test)]
 mod tests {
     use embedded_hal_mock::eh1::spi as mock_spi;
+    use pretty_env_logger;
 
     #[test]
     fn pcal9714() {
+        // Init logging
+        let _ = pretty_env_logger::formatted_builder()
+            .is_test(true)
+            .filter(None, log::LevelFilter::Debug)
+            .try_init();
+
         let expectations = [
             // pin setup gp0_1
             mock_spi::Transaction::transaction_start(),
@@ -426,7 +452,7 @@ mod tests {
             mock_spi::Transaction::transaction_end(),
             //      Reading the pin configuration
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x06]),
             mock_spi::Transaction::read(0x7e),
             mock_spi::Transaction::transaction_end(),
             //      Setting the pin as an input
@@ -441,7 +467,7 @@ mod tests {
             mock_spi::Transaction::transaction_end(),
             //      Setting the pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x07, 0xfe]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x07, 0xfe]),
             mock_spi::Transaction::transaction_end(),
             // Pin setup of gp1_5
             //      Reading current port configuration
@@ -451,12 +477,12 @@ mod tests {
             mock_spi::Transaction::transaction_end(),
             //      Setting pin as an output
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x41, 0x07, 0x7e]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x07, 0xDE]),
             mock_spi::Transaction::transaction_end(),
             //      Reading pin configuration
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x07]),
-            mock_spi::Transaction::read(0x7e),
+            mock_spi::Transaction::read(0xde),
             mock_spi::Transaction::transaction_end(),
             //      Setting pin as input
             mock_spi::Transaction::transaction_start(),
@@ -476,7 +502,7 @@ mod tests {
             mock_spi::Transaction::transaction_end(),
             // Setting gp1_0 low
             mock_spi::Transaction::transaction_start(),
-            mock_spi::Transaction::write_vec(vec![0x40, 0x13, 0x00]),
+            mock_spi::Transaction::write_vec(vec![0x41, 0x03, 0x00]),
             mock_spi::Transaction::transaction_end(),
             // input gp0_7, gp1_5
             // Reading the value of gp0_7
@@ -492,12 +518,12 @@ mod tests {
             // Reading the value of gp1_5
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
-            mock_spi::Transaction::read(0x80),
+            mock_spi::Transaction::read(0xB0),
             mock_spi::Transaction::transaction_end(),
             // Reading the value of gp1_5
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, 0x01]),
-            mock_spi::Transaction::read(0x7f),
+            mock_spi::Transaction::read(0xDf),
             mock_spi::Transaction::transaction_end(),
         ];
 

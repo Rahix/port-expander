@@ -17,7 +17,10 @@ std = []
 
 [dependencies]
 critical-section = { version = "1.1.2", optional = true }
+defmt = "1.0.1"
 embedded-hal = { version = "1.0.0" }
+log = "0.4.29"
+pretty_env_logger = "0.5.0"
 
 [dev-dependencies]
 embedded-hal-mock = "0.11.1"
