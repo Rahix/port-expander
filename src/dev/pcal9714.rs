@@ -1,6 +1,7 @@
 //! Support for the `PCAL9714` "Ultra low-voltage translating 14-bit SPI I/O expander with Agile I/O features, interrupt output, and reset"
 //!
 //! Datasheet: https://www.nxp.com/docs/en/data-sheet/PCAL9714.pdf
+//!         (Archive: https://web.archive.org/web/20260102051402/https://www.nxp.com/docs/en/data-sheet/PCAL9714.pdf)
 //!
 //! The PCAL9714 offers one eight-bit GPIO port and one six-bit GPIO port.
 //! It has two possible addresses so one chip select can be used for two IC's.
