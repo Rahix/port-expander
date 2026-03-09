@@ -401,16 +401,9 @@ mod tests {
     use embedded_hal_mock::eh1::spi as mock_spi;
     use log;
     use log::info;
-    use pretty_env_logger;
 
     #[test]
     fn pcal9714() {
-        // Init logging
-        let _ = pretty_env_logger::formatted_builder()
-            .is_test(true)
-            .filter(None, log::LevelFilter::Debug)
-            .try_init();
-
         // Making SPI expectation list
         // See datasheet for more specific details for the transactions.
         //
