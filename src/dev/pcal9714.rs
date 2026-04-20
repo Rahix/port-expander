@@ -13,21 +13,21 @@
 //! 1 (pins 5..0) and the lower byte corresponds to port 0 (pins 7..0).
 
 /// `PCAL9714` "14-Bit I/O Expander with Agile I/O features, interrupt output, and reset" with SPI interface
-pub struct PCAL9714<M>(M);
+pub struct Pcal9714<M>(M);
 
-impl<SPI> PCAL9714<core::cell::RefCell<Driver<PCAL9714_Bus<SPI>>>>
+impl<SPI> Pcal9714<core::cell::RefCell<Driver<Pcal9714Spi<SPI>>>>
 where
     SPI: crate::SpiBus,
 {
     /// Create a new instance of the PCAL9714 with SPI interface
-    pub fn new_PCAL9714(bus: SPI, address_pin: bool) -> Self {
-        Self::with_mutex(PCAL9714_Bus(bus), address_pin, false, false)
+    pub fn new_pcal9714(bus: SPI, address_pin: bool) -> Self {
+        Self::with_mutex(Pcal9714Spi(bus), address_pin, false, false)
     }
 }
 
-impl<B, M> PCAL9714<M>
+impl<B, M> Pcal9714<M>
 where
-    B: PCAL9714Bus,
+    B: Pcal9714Bus,
     M: crate::PortMutex<Port = Driver<B>>,
 {
     pub fn with_mutex(bus: B, a0: bool, a1: bool, a2: bool) -> Self {
@@ -57,7 +57,7 @@ where
 
 pub struct Parts<'a, B, M = core::cell::RefCell<Driver<B>>>
 where
-    B: PCAL9714Bus,
+    B: Pcal9714Bus,
     M: crate::PortMutex<Port = Driver<B>>,
 {
     pub gp0_0: crate::Pin<'a, crate::mode::Input, M>,
@@ -151,7 +151,7 @@ impl<B> Driver<B> {
     }
 }
 
-impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
+impl<B: Pcal9714Bus> crate::PortDriver for Driver<B> {
     type Error = B::BusError;
 
     /// Sets the pin high
@@ -191,7 +191,7 @@ impl<B: PCAL9714Bus> crate::PortDriver for Driver<B> {
 }
 
 /// This function sets the direction of the pin, if it is an output or an input
-impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
+impl<B: Pcal9714Bus> crate::PortDriverTotemPole for Driver<B> {
     fn set_direction(
         &mut self,
         mask: u32,
@@ -222,7 +222,7 @@ impl<B: PCAL9714Bus> crate::PortDriverTotemPole for Driver<B> {
     }
 }
 
-impl<B: PCAL9714Bus> crate::PortDriverPullUp for Driver<B> {
+impl<B: Pcal9714Bus> crate::PortDriverPullUp for Driver<B> {
     fn set_pull_up(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error> {
         let (mask_set, mask_clear) = match enable {
             true => (mask as u16, 0),
@@ -264,7 +264,7 @@ impl<B: PCAL9714Bus> crate::PortDriverPullUp for Driver<B> {
     }
 }
 
-impl<B: PCAL9714Bus> crate::PortDriverPullDown for Driver<B> {
+impl<B: Pcal9714Bus> crate::PortDriverPullDown for Driver<B> {
     fn set_pull_down(&mut self, mask: u32, enable: bool) -> Result<(), Self::Error> {
         let (mask_set, mask_clear) = match enable {
             true => (mask as u16, 0),
@@ -306,7 +306,7 @@ impl<B: PCAL9714Bus> crate::PortDriverPullDown for Driver<B> {
     }
 }
 
-impl<B: PCAL9714Bus> crate::PortDriverPolarity for Driver<B> {
+impl<B: Pcal9714Bus> crate::PortDriverPolarity for Driver<B> {
     fn set_polarity(&mut self, mask: u32, inverted: bool) -> Result<(), Self::Error> {
         let (mask_set, mask_clear) = match inverted {
             true => (mask as u16, 0),
@@ -334,11 +334,11 @@ impl<B: PCAL9714Bus> crate::PortDriverPolarity for Driver<B> {
 
 // We need these newtype wrappers since we can't implement `Mcp23x17Bus` for both `I2cBus` and `SpiBus`
 // at the same time
-pub struct PCAL9714_Bus<SPI>(SPI);
+pub struct Pcal9714Spi<SPI>(SPI);
 
 /// Special -Bus trait for the PCAL9714 since the SPI version is a bit special/weird in terms of writing
 /// SPI registers, which can't necessarily be generialized for other devices.
-pub trait PCAL9714Bus {
+pub trait Pcal9714Bus {
     type BusError;
 
     fn write_reg<R: Into<u8>>(&mut self, addr: u8, reg: R, value: u8)
@@ -364,7 +364,7 @@ pub trait PCAL9714Bus {
     }
 }
 
-impl<SPI: crate::SpiBus> PCAL9714Bus for PCAL9714_Bus<SPI> {
+impl<SPI: crate::SpiBus> Pcal9714Bus for Pcal9714Spi<SPI> {
     type BusError = SPI::BusError;
 
     fn write_reg<R: Into<u8>>(
@@ -520,7 +520,7 @@ mod tests {
         let mut bus = mock_spi::Mock::new(&expectations);
 
         info!("INFO: Configuring the port expander");
-        let mut pca = super::PCAL9714::new_PCAL9714(bus.clone(), false);
+        let mut pca = super::Pcal9714::new_PCAL9714(bus.clone(), false);
         let pca_pins = pca.split();
 
         info!("INFO: Setting gp0_0 as output");

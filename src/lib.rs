@@ -24,17 +24,16 @@
 //! ```no_run
 //! // Initialize SPI peripheral from HAL
 //! let spi = todo!();
-//! # let spi = embedded_hal_mock::eh1::i2c::Mock::new(&[]);
+//! # let spi = embedded_hal_mock::eh1::spi::Mock::new(&[]);
 //!
-//! // TODO:
-//! let mut pcal9714 = port_expander::PCAL9714::new(spi, false, false, false);
+//! let mut pcal9714 = port_expander::PCAL9714::new_PCAL9714(spi, false);
 //! let pcal_pins = pcal9714.split();
 //!
-//! let io0_0 = pcal_pins.io0_0.into_output().unwrap();
-//! let io1_5 = pcal_pins.io0_1; // default is input
+//! let pin0_0 = pcal_pins.gp0_0.into_output().unwrap();
+//! let pin1_1 = pcal_pins.gp1_1; // default is input
 //!
-//! io0_0.set_high().unwrap();
-//! assert!(io1_5.is_high().unwrap());
+//! pin0_0.set_high().unwrap();
+//! assert!(pin1_1.is_high().unwrap());
 //! ```
 //!
 //! ## Accessing multiple pins at the same time
@@ -109,7 +108,7 @@ pub use dev::pca9555::Pca9555;
 pub use dev::pca9702::Pca9702;
 pub use dev::pcal6408a::Pcal6408a;
 pub use dev::pcal6416a::Pcal6416a;
-pub use dev::pcal9714::PCAL9714;
+pub use dev::pcal9714::Pcal9714;
 pub use dev::pcf8574::Pcf8574;
 pub use dev::pcf8574::Pcf8574a;
 pub use dev::pcf8575::Pcf8575;
