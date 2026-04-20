@@ -138,7 +138,7 @@ pub struct Driver<B> {
 
 impl<B> Driver<B> {
     pub fn new(bus: B, address_pin: bool, _a1: bool, _a2: bool) -> Self {
-        // Address pin is connected to V_ss (-> 0x40) or V_dd(-> 0x42)
+        // Address pin is connected to VSS (-> 0x40) or VDD(-> 0x42)
         let addr = match address_pin {
             true => 0x42,
             false => 0x40,
@@ -332,8 +332,6 @@ impl<B: Pcal9714Bus> crate::PortDriverPolarity for Driver<B> {
     }
 }
 
-// We need these newtype wrappers since we can't implement `Mcp23x17Bus` for both `I2cBus` and `SpiBus`
-// at the same time
 pub struct Pcal9714Spi<SPI>(SPI);
 
 /// Special -Bus trait for the PCAL9714 since the SPI version is a bit special/weird in terms of writing
@@ -385,7 +383,6 @@ impl<SPI: crate::SpiBus> Pcal9714Bus for Pcal9714Spi<SPI> {
         let addr = addr | 0x01;
         let write = [addr, reg.into()];
         let mut tx = [
-            // TODO: Modify to meet the correct embedded hal things
             embedded_hal::spi::Operation::Write(&write),
             embedded_hal::spi::Operation::Read(&mut val),
         ];
@@ -493,11 +490,10 @@ mod tests {
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x40, Regs::OutputPort1.into(), 0x00]),
             mock_spi::Transaction::transaction_end(),
-            // input gp0_7, gp1_5
             // Reading the value of gp0_7
             mock_spi::Transaction::transaction_start(),
             mock_spi::Transaction::write_vec(vec![0x41, Regs::InputPort0.into()]),
-            mock_spi::Transaction::read(0x80), // TODO: check
+            mock_spi::Transaction::read(0x80),
             mock_spi::Transaction::transaction_end(),
             // Reading the value of gp0_7
             mock_spi::Transaction::transaction_start(),
@@ -520,7 +516,7 @@ mod tests {
         let mut bus = mock_spi::Mock::new(&expectations);
 
         info!("INFO: Configuring the port expander");
-        let mut pca = super::Pcal9714::new_PCAL9714(bus.clone(), false);
+        let mut pca = super::Pcal9714::new_pcal9714(bus.clone(), false);
         let pca_pins = pca.split();
 
         info!("INFO: Setting gp0_0 as output");
