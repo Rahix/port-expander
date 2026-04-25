@@ -11,6 +11,7 @@
 //!
 //! When passing 16-bit values to this driver, the upper byte corresponds to port
 //! 1 (pins 5..0) and the lower byte corresponds to port 0 (pins 7..0).
+use defmt::Format;
 
 /// `PCAL9714` "14-Bit I/O Expander with Agile I/O features, interrupt output, and reset" with SPI interface
 pub struct Pcal9714<M>(M);
@@ -55,6 +56,7 @@ where
     }
 }
 
+#[derive(Format)]
 pub struct Parts<'a, B, M = core::cell::RefCell<Driver<B>>>
 where
     B: Pcal9714Bus,
@@ -275,10 +277,10 @@ impl<B: Pcal9714Bus> crate::PortDriverPullDown for Driver<B> {
             self.bus.update_reg(
                 self.addr,
                 Regs::PullUpPullDownEnableRegister0,
-                !((mask_set & 0xFF) as u8),
-                !((mask_clear & 0xFF) as u8),
+                (mask_set & 0xFF) as u8,
+                (mask_clear & 0xFF) as u8,
             )?;
-            // Sett 1 then pullup
+            // Sett 0 then pulldown
             self.bus.update_reg(
                 self.addr,
                 Regs::PullUpPullDownSelectionRegister0,
@@ -291,10 +293,10 @@ impl<B: Pcal9714Bus> crate::PortDriverPullDown for Driver<B> {
             self.bus.update_reg(
                 self.addr,
                 Regs::PullUpPullDownEnableRegister1,
-                !((mask_set >> 8) as u8),
-                !((mask_clear >> 8) as u8),
+                (mask_set >> 8) as u8,
+                (mask_clear >> 8) as u8,
             )?;
-            // Sett 1 then pullup
+            // Sett 0 then pulldown
             self.bus.update_reg(
                 self.addr,
                 Regs::PullUpPullDownSelectionRegister1,
