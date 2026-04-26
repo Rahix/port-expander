@@ -1,6 +1,6 @@
 `port-expander` [![crates.io page](https://img.shields.io/crates/v/port-expander.svg)](https://crates.io/crates/port-expander) [![docs.rs page](https://docs.rs/port-expander/badge.svg)](https://docs.rs/port-expander)
 ===============
-This is a crate providing a common abstraction for I²C port-expanders.  This
+This is a crate providing a common abstraction for I²C and SPI port-expanders.  This
 abstraction is not necessarily the most performant, but it allows using the pins
 just like direct GPIOs.  Because the pin types also implement the `embedded-hal`
 digital IO traits, they can also be passed to further drivers downstream (e.g.
@@ -46,6 +46,7 @@ a similar existing implementation as inspiration.  Contributions welcome!
 - [`PCF8575`](https://docs.rs/port-expander/latest/port_expander/dev/pcf8575/struct.Pcf8575.html)
 - [`TCA6408A`](https://docs.rs/port-expander/latest/port_expander/dev/tca6408a/struct.Tca6408a.html)
 - [`PI4IOE5V6408`](https://docs.rs/port-expander/latest/port_expander/dev/pi4ioe5v6408/struct.Pi4ioe5v6408.html)
+- [`PCAL9714`](https://docs.rs/port-expander/latest/port_expander/dev/pcal9714/struct.Pcal9714.html)
 
 ## Non-local sharing
 `port-expander` uses a custom trait for abstracting different kinds of mutexes:
