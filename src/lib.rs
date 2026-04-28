@@ -26,7 +26,7 @@
 //! let spi = todo!();
 //! # let spi = embedded_hal_mock::eh1::spi::Mock::new(&[]);
 //!
-//! let mut pcal9714 = port_expander::PCAL9714::new_PCAL9714(spi, false);
+//! let mut pcal9714 = port_expander::Pcal9714::new_pcal9714(spi, false);
 //! let pcal_pins = pcal9714.split();
 //!
 //! let pin0_0 = pcal_pins.gp0_0.into_output().unwrap();

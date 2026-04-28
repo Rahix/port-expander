@@ -11,7 +11,6 @@
 //!
 //! When passing 16-bit values to this driver, the upper byte corresponds to port
 //! 1 (pins 5..0) and the lower byte corresponds to port 0 (pins 7..0).
-use defmt::Format;
 
 /// `PCAL9714` "14-Bit I/O Expander with Agile I/O features, interrupt output, and reset" with SPI interface
 pub struct Pcal9714<M>(M);
@@ -22,7 +21,7 @@ where
 {
     /// Create a new instance of the PCAL9714 with SPI interface
     pub fn new_pcal9714(bus: SPI, address_pin: bool) -> Self {
-        Self::with_mutex(Pcal9714Spi(bus), address_pin, false, false)
+        Self::with_mutex(Pcal9714Spi(bus), address_pin)
     }
 }
 
@@ -31,8 +30,8 @@ where
     B: Pcal9714Bus,
     M: crate::PortMutex<Port = Driver<B>>,
 {
-    pub fn with_mutex(bus: B, a0: bool, a1: bool, a2: bool) -> Self {
-        Self(crate::PortMutex::create(Driver::new(bus, a0, a1, a2)))
+    pub fn with_mutex(bus: B, a0: bool) -> Self {
+        Self(crate::PortMutex::create(Driver::new(bus, a0)))
     }
 
     pub fn split<'a>(&'a mut self) -> Parts<'a, B, M> {
@@ -56,7 +55,6 @@ where
     }
 }
 
-#[derive(Format)]
 pub struct Parts<'a, B, M = core::cell::RefCell<Driver<B>>>
 where
     B: Pcal9714Bus,
@@ -139,7 +137,7 @@ pub struct Driver<B> {
 }
 
 impl<B> Driver<B> {
-    pub fn new(bus: B, address_pin: bool, _a1: bool, _a2: bool) -> Self {
+    pub fn new(bus: B, address_pin: bool) -> Self {
         // Address pin is connected to VSS (-> 0x40) or VDD(-> 0x42)
         let addr = match address_pin {
             true => 0x42,
@@ -398,8 +396,6 @@ impl<SPI: crate::SpiBus> Pcal9714Bus for Pcal9714Spi<SPI> {
 mod tests {
     use super::*;
     use embedded_hal_mock::eh1::spi as mock_spi;
-    use log;
-    use log::info;
 
     #[test]
     fn pcal9714() {
@@ -514,48 +510,30 @@ mod tests {
             mock_spi::Transaction::transaction_end(),
         ];
 
-        info!("INFO: Starting Mock SPI");
         let mut bus = mock_spi::Mock::new(&expectations);
 
-        info!("INFO: Configuring the port expander");
         let mut pca = super::Pcal9714::new_pcal9714(bus.clone(), false);
         let pca_pins = pca.split();
 
-        info!("INFO: Setting gp0_0 as output");
         let mut gp0_0 = pca_pins.gp0_0.into_output().unwrap();
 
-        info!("INFO: Setting gp0_7 as output");
         let gp0_7 = pca_pins.gp0_7.into_output().unwrap();
-        info!("INFO: Setting gp0_7 as input");
         let gp0_7 = gp0_7.into_input().unwrap();
 
-        info!("INFO: Setting gp1_0 as output");
         let mut gp1_0 = pca_pins.gp1_0.into_output().unwrap();
-        info!("INFO: Setting gp1_5 as output");
         let gp1_5 = pca_pins.gp1_5.into_output().unwrap();
-        info!("INFO: Setting gp1_5 as output");
         let gp1_5 = gp1_5.into_input().unwrap();
 
         // output high and low
-        info!("INFO: Setting gp0_0 high");
         gp0_0.set_high().unwrap();
-        info!("INFO: Setting gp0_0 low");
         gp0_0.set_low().unwrap();
-        info!("INFO: Setting gp1_0 high");
         gp1_0.set_high().unwrap();
-        info!("INFO: Setting gp1_0 low");
         gp1_0.set_low().unwrap();
 
-        info!("INFO: Asserting the inputs");
-
         // input high and low
-        info!("INFO: Asserting gp07 is high?");
         assert!(gp0_7.is_high().unwrap());
-        info!("INFO: Asserting gp07 is low?");
         assert!(gp0_7.is_low().unwrap());
-        info!("INFO: Asserting gp1_5 is high?");
         assert!(gp1_5.is_high().unwrap());
-        info!("INFO: Asserting gp1_5 is low?");
         assert!(gp1_5.is_low().unwrap());
 
         bus.done();
