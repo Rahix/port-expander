@@ -20,6 +20,22 @@
 //! assert!(io1_5.is_high().unwrap());
 //! ```
 //!
+//! ## Example
+//! ```no_run
+//! // Initialize SPI peripheral from HAL
+//! let spi = todo!();
+//! # let spi = embedded_hal_mock::eh1::spi::Mock::new(&[]);
+//!
+//! let mut pcal9714 = port_expander::Pcal9714::new_pcal9714(spi, false);
+//! let pcal_pins = pcal9714.split();
+//!
+//! let pin0_0 = pcal_pins.gp0_0.into_output().unwrap();
+//! let pin1_1 = pcal_pins.gp1_1; // default is input
+//!
+//! pin0_0.set_high().unwrap();
+//! assert!(pin1_1.is_high().unwrap());
+//! ```
+//!
 //! ## Accessing multiple pins at the same time
 //! Sometimes timing constraints mandate that multiple pin accesses (reading or writing) happen at
 //! the same time.  The [`write_multiple()`] and [`read_multiple()`] methods are designed for doing
@@ -40,6 +56,7 @@
 //! - [`PCF8575`](Pcf8575)
 //! - [`TCA6408A`](Tca6408a)
 //! - [`MCP23x17`](Mcp23x17)
+//! - [`PCAL9714`](PCAL9714)
 //!
 //! ## Non-local sharing
 //! `port-expander` uses a custom trait for abstracting different kinds of mutexes:
@@ -91,6 +108,7 @@ pub use dev::pca9555::Pca9555;
 pub use dev::pca9702::Pca9702;
 pub use dev::pcal6408a::Pcal6408a;
 pub use dev::pcal6416a::Pcal6416a;
+pub use dev::pcal9714::Pcal9714;
 pub use dev::pcf8574::Pcf8574;
 pub use dev::pcf8574::Pcf8574a;
 pub use dev::pcf8575::Pcf8575;
